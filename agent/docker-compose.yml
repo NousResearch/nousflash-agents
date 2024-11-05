@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  pipeline:
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - ./data:/data
+    environment:
+      - SQLITE_DB_PATH=/data/agents.db
