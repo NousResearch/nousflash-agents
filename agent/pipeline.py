@@ -38,9 +38,9 @@ class Config:
     openai_api_key: str
     max_reply_rate: float = 1.0  # 100% for testing
     min_posting_significance_score: float = 3.0
-    min_storing_memory_significance: float = 7.0
+    min_storing_memory_significance: float = 6.0
     min_reply_worthiness_score: float = 3.0
-    min_follow_score: float = 0.75
+    min_follow_score: float = 0.9
     min_eth_balance: float = 0.3
     bot_username: str = "tee_hee_he"
     bot_email: str = "tee_hee_he@example.com"
@@ -146,6 +146,9 @@ class PostingPipeline:
         )
         print(f"Reply significance score: {reply_significance_score}")
 
+        if "$" in content or "ca:" or "ticker" in content:
+            reply_significance_score -= 3
+
         if reply_significance_score >=self.config.min_reply_worthiness_score:
             return True
         else:
@@ -211,21 +214,40 @@ class PostingPipeline:
 
         # Process notifications
         notif_context_tuple = fetch_notification_context(self.config.account)
+        print(f"Notification context: {notif_context_tuple}")
+
         existing_tweet_ids = {
             tweet.tweet_id for tweet in 
             self.config.db.query(TweetPost.tweet_id).all()
         }
         
-        # Filter new notifications
-        filtered_notifs = [
-            context for context in notif_context_tuple 
-            if context[1] not in existing_tweet_ids
-        ]
+        print(f"Existing tweet ids: {existing_tweet_ids}")
 
+        filtered_notifs = []
+        for context in notif_context_tuple:
+            try:
+                if isinstance(context, (list, tuple)) and len(context) > 1:
+                    if context[1] not in existing_tweet_ids:
+                        filtered_notifs.append(context)
+            except Exception as e:
+                print(f"Error processing context {context}: {e}")
+
+        print(f"Filtered notifs: {filtered_notifs}")
+        
         # Store processed tweet IDs
-        for _, tweet_id in notif_context_tuple:
-            self.config.db.add(TweetPost(tweet_id=tweet_id))
+        print("Storing processed tweet IDs")    
+        for context in notif_context_tuple:
+            try:
+                if isinstance(context, (list, tuple)) and len(context) >= 2:
+                    tweet_id = context[1]
+                    self.config.db.add(TweetPost(tweet_id=tweet_id))
+            except Exception as e:
+                print(f"Error processing tweet for storage: {e}")
+                print(f"Problematic context: {context}")
+                continue
+
         self.config.db.commit()
+        print("Processed tweets stored")
 
         notif_context = [context[0] for context in filtered_notifs]
         print("New Notifications:")

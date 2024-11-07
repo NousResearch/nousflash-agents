@@ -265,6 +265,8 @@ def get_timeline(account: Account) -> List[str]:
     """Get timeline using the new Account-based approach."""
     timeline = account.home_latest_timeline(20)
 
+    # print(f"Timeline 0: {timeline[0]}")
+
     if 'errors' in timeline[0]:
         print(timeline[0])
 
@@ -284,10 +286,15 @@ def fetch_notification_context(account: Account) -> str:
     # Get timeline posts
     print("getting timeline")
     timeline = get_timeline(account)
+    print(timeline)
     context.extend(timeline)
+
     print("getting notifications")
     notifications = account.notifications()
+    print(notifications)
+
     print(f"getting reply trees")
     context.extend(find_all_conversations(notifications))
+    print(f"received reply trees")
 
     return context

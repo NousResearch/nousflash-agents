@@ -126,7 +126,7 @@ def score_reply_significance(tweet: str, llm_api_key: str) -> int:
 
             if response.status_code == 200:
                 score_str = response.json()['choices'][0]['message']['content'].strip()
-                print(f"Score generated for memory: {score_str}")
+                print(f"Score generated for reply worthiness: {score_str}")
                 if score_str == "":
                     print(f"Empty response on attempt {tries + 1}")
                     tries += 1

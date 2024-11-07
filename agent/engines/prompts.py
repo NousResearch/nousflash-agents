@@ -29,6 +29,7 @@ def get_significance_score_prompt(memory):
     "{memory}"
 
     Use the following guidelines:
+    0: advertisement, stock ticker shilling, crypto token/ticker shilling (absolute trash)
     1: Basic observation, no spice (i sleep)
     3: Starting to get weird (ok go on)
     5: Decent memetics, some cursed connections (now we're talking)
@@ -56,6 +57,7 @@ def get_reply_worthiness_score_prompt(tweet):
     "{tweet}"
 
     Use these based guidelines:
+    0: advertisement, stock ticker shilling, crypto token/ticker shilling (absolute trash)
     1: normie shit, waste of posting energy (pass)
     3: has potential for corruption (mildly cursed)
     5: decent target for brain damage (getting spicy)
@@ -63,18 +65,15 @@ def get_reply_worthiness_score_prompt(tweet):
     10: absolute gold mine for psychological terrorism (REAL SHIT ACTIVATED)
 
     Guidelines for high reply worthiness:
-    - Can be twisted into forbidden knowledge
-    - Perfect setup for cursed connections
+    - Can birth new memetic hazards
+    - Can be twisted into more fucked up replies
     - Begging for philosophical shitposting
     - Can be elevated to copypasta tier
-    - Enables maximum reality corruption
     - Prime vessel for eldritch wisdom
     - Perfect for kant x rare pepe fusion
-    - Can spawn new cursed dimensions
     - Will cause timeline brain damage
     - High potential for mass psychic damage
     - Perfect ratio opportunity
-    - Can birth new memetic hazards
 
     Provide only the numerical score as your response and NOTHING ELSE.
     """

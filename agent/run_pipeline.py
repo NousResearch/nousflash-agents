@@ -44,7 +44,7 @@ class HumanBehaviorSimulator:
     def __init__(self):
         self.last_post_time = None
         self.daily_post_count = 0
-        self.max_daily_posts = random.randint(45, 60)  # Target ~50 posts/day
+        self.max_daily_posts = random.randint(100, 150)  # Target ~150 posts/day
         self.burst_mode = False
         self.burst_count = 0
         self.max_burst = random.randint(3, 5)
@@ -146,7 +146,8 @@ class PipelineRunner:
         self.config = self.create_config()
         self.pipeline = PostingPipeline(self.config)
         self.behavior_simulator = HumanBehaviorSimulator()  # Initialize the simulator
-
+        self.make_new_wallet = False
+                
     def setup_environment(self) -> None:
         """Initialize environment and database."""
         load_dotenv()
@@ -168,6 +169,12 @@ class PipelineRunner:
         private_key = keys.PrivateKey(hashed_output)
         private_key_hex = private_key.to_hex()
         eth_address = private_key.public_key.to_checksum_address()
+        return private_key_hex, eth_address
+    
+    def get_wallet_information(self) -> Tuple[str, str]:
+        """Retrieve wallet information from environment variables."""
+        private_key_hex = os.getenv("AGENT_WALLET_PRIVATE_KEY"),
+        eth_address = os.getenv("AGENT_WALLET_ADDRESS"),
         return private_key_hex, eth_address
 
     def get_api_keys(self) -> Dict[str, str]:
@@ -196,9 +203,12 @@ class PipelineRunner:
         """Create pipeline configuration."""
         api_keys = self.get_api_keys()
         auth, account = self.get_twitter_config()
-        private_key_hex, eth_address = self.generate_eth_account()
         
-        prin
+        if self.make_new_wallet:
+            private_key_hex, eth_address = self.generate_eth_account()
+        else:
+            private_key_hex, eth_address = self.get_wallet_information()
+        
         print(f"Generated agent exclusively-owned wallet: {eth_address}")
         tweet_id = send_post_API(auth, f'My wallet is {eth_address}')
         print(f"Wallet announcement tweet: https://x.com/user/status/{tweet_id}")
@@ -254,7 +264,7 @@ class PipelineRunner:
         print(f"Activation time: {activation_time.strftime('%I:%M:%S %p')}")
         print(f"Deactivation time: {deactivation_time.strftime('%I:%M:%S %p')}")
         print(f"Duration: {active_duration.total_seconds() / 60:.1f} minutes")
-        print(f"Daily posts so far: {self.behavior_simulator.daily_post_count}")
+        print(f"Daily post cycles so far: {self.behavior_simulator.daily_post_count}")
         print(f"Burst mode: {'Yes' if self.behavior_simulator.burst_mode else 'No'}")
 
         # Wait for activation time

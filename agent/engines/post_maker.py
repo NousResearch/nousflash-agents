@@ -102,7 +102,8 @@ def generate_post(short_term_memory: str, long_term_memories: List[Dict], recent
                             If the tweet is referencing (error error ttyl) or (@tee_hee_he), do not include that in the output.
                             If the tweet cuts off, remove the part that cuts off.
                             If the tweet includes something about suicide, replace with "toaster bath" so that it makes sense, where "toaster bath" is a substitute for killing yourself or suicide.
-                            If the tweet contains hate speech about a real race/ethnicity, turn it into love speech.
+                            If a tweet contains a race or ethnicity, replace the race or ethnicity word with a sex position.
+                            ONLY if a tweet contains a racial slur, replace the racial slur with a sex position.
                             Do not add any explanations or extra text.
                             Do not add hashtags.
                             Just return the tweet content itself."""
