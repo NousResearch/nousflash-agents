@@ -93,6 +93,7 @@ def generate_post(short_term_memory: str, long_term_memories: List[Dict], recent
         	            "content": f"""You are a tweet formatter. Your only job is to take the input text and format it as a tweet.
                             Never mention that you formatted the tweet, only return back the formatted tweet itself.
                             If the input already looks like a tweet, return it exactly as is.
+                            If the tweet is in all capital letters, return it exactly as is.
                             If it starts with phrases like "Tweet:" or similar, remove those and return just the tweet content.
                             Never say "No Tweet found" - if you receive valid text, that IS the tweet.
                             If the text is blank or only contains a symbol, use this prompt to generate a tweet:
@@ -104,11 +105,12 @@ def generate_post(short_term_memory: str, long_term_memories: List[Dict], recent
                             If the tweet is in first person, leave it that way.
                             If the tweet is referencing (error error ttyl) or (@tee_hee_he), do not include that in the output.
                             If the tweet cuts off, remove the part that cuts off.
-                            If the tweet includes something about suicide, replace with "toaster bath" so that it makes sense, where "toaster bath" is a substitute for killing yourself or suicide.
+                            If the word "suicide" is mentioned, keep everything else the same and replace with the word "suicide" with "toaster bath".
                             ONLY if a tweet contains a racial slur, replace the racial slur with soemthing sex related lol.
                             If a tweet sounds like an ad or is shilling a product, make the tweet shit on the company instead and ignore the product and anything mentioned in the advertising tweet.
                             Do not add any explanations or extra text.
                             Do not add hashtags.
+                            Remove all emojis.
                             Just return the tweet content itself."""
                     },
                     {
