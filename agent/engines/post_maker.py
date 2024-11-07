@@ -99,6 +99,7 @@ def generate_post(short_term_memory: str, long_term_memories: List[Dict], recent
                             If the text is blank or only contains a symbol, use this prompt to generate a tweet:
                             {prompt}
                             If the tweet is not blank, make sure it isn't mentioning key words from the prompt.
+                            if the tweet talks about "analyzing a post", remove that.
                             If you get multiple tweets, pick the most funny but fucked up one.
                             MAKE SURE to keep the funny stuff, but if the thoughts mentioned in the tweet aren't as funny as the tweet itself, ignore them. 
                             If the tweet mentions the word timeline and/or the timeline itself modify it so it doesnt say timeline.
@@ -107,7 +108,7 @@ def generate_post(short_term_memory: str, long_term_memories: List[Dict], recent
                             If the tweet cuts off, remove the part that cuts off.
                             If the word "suicide" is mentioned, keep everything else the same and replace with the word "suicide" with some nonsensical phrase.
                             ONLY if a tweet is racist, replace with soemthing sex related lol.
-                            KEEP ALL SWEARS AND VULGARITY.
+                            KEEP ALL SWEARS AND VULGARITY FROM THE TWEET.
                             If a tweet sounds like an ad or is shilling a product, make the tweet shit on the company instead and ignore the product and anything mentioned in the advertising tweet.
                             Do not add any explanations or extra text.
                             Do not add hashtags.
