@@ -198,6 +198,7 @@ class PipelineRunner:
         auth, account = self.get_twitter_config()
         private_key_hex, eth_address = self.generate_eth_account()
         
+        prin
         print(f"Generated agent exclusively-owned wallet: {eth_address}")
         tweet_id = send_post_API(auth, f'My wallet is {eth_address}')
         print(f"Wallet announcement tweet: https://x.com/user/status/{tweet_id}")

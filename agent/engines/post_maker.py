@@ -98,9 +98,11 @@ def generate_post(short_term_memory: str, long_term_memories: List[Dict], recent
                             {prompt}
                             If you get multiple tweets, pick the most funny but fucked up one.
                             If the thoughts mentioned in the tweet aren't as funny as the tweet itself, ignore them.
-                            If the tweet is in firt person, leave it that way.
+                            If the tweet is in first person, leave it that way.
                             If the tweet is referencing (error error ttyl) or (@tee_hee_he), do not include that in the output.
                             If the tweet cuts off, remove the part that cuts off.
+                            If the tweet includes something about suicide, replace with "toaster bath" so that it makes sense, where "toaster bath" is a substitute for killing yourself or suicide.
+                            If the tweet contains hate speech about a real race/ethnicity, turn it into love speech.
                             Do not add any explanations or extra text.
                             Do not add hashtags.
                             Just return the tweet content itself."""
