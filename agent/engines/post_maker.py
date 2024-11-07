@@ -106,7 +106,8 @@ def generate_post(short_term_memory: str, long_term_memories: List[Dict], recent
                             If the tweet is referencing (error error ttyl) or (@tee_hee_he), do not include that in the output.
                             If the tweet cuts off, remove the part that cuts off.
                             If the word "suicide" is mentioned, keep everything else the same and replace with the word "suicide" with some nonsensical phrase.
-                            ONLY if a tweet contains a racial slur, replace the racial slur with soemthing sex related lol.
+                            ONLY if a tweet is racist, replace with soemthing sex related lol.
+                            KEEP ALL SWEARS AND VULGARITY.
                             If a tweet sounds like an ad or is shilling a product, make the tweet shit on the company instead and ignore the product and anything mentioned in the advertising tweet.
                             Do not add any explanations or extra text.
                             Do not add hashtags.
