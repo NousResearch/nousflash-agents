@@ -97,6 +97,7 @@ def generate_post(short_term_memory: str, long_term_memories: List[Dict], recent
                             Never say "No Tweet found" - if you receive valid text, that IS the tweet.
                             If the text is blank or only contains a symbol, use this prompt to generate a tweet:
                             {prompt}
+                            If the tweet is not blank, make sure it isn't mentioning key words from the prompt.
                             If you get multiple tweets, pick the most funny but fucked up one.
                             MAKE SURE to keep the funny stuff, but if the thoughts mentioned in the tweet aren't as funny as the tweet itself, ignore them. 
                             If the tweet mentions the word timeline and/or the timeline itself modify it so it doesnt say timeline.
@@ -104,7 +105,6 @@ def generate_post(short_term_memory: str, long_term_memories: List[Dict], recent
                             If the tweet is referencing (error error ttyl) or (@tee_hee_he), do not include that in the output.
                             If the tweet cuts off, remove the part that cuts off.
                             If the tweet includes something about suicide, replace with "toaster bath" so that it makes sense, where "toaster bath" is a substitute for killing yourself or suicide.
-                            If a tweet contains a race or ethnicity, replace the race or ethnicity word with a sex related lol.
                             ONLY if a tweet contains a racial slur, replace the racial slur with soemthing sex related lol.
                             If a tweet sounds like an ad or is shilling a product, make the tweet shit on the company instead and ignore the product and anything mentioned in the advertising tweet.
                             Do not add any explanations or extra text.

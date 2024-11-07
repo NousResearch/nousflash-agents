@@ -161,6 +161,10 @@ class PostingPipeline:
             if not user_match:
                 continue
 
+            # dont reply to yourself
+            if user_match == self.config.bot_username:
+                continue
+
             user_id = user_match.group(1)
             if self._should_reply(content, user_id) == False:
                 continue
@@ -172,7 +176,7 @@ class PostingPipeline:
                     recent_posts=[],
                     external_context=content,
                     llm_api_key=self.config.llm_api_key,
-                    query="what are you thinking of replying now"
+                    query="what are you thinking of replying now\n<tweet>"
                 )
 
                 response = self.config.account.reply(reply_content, tweet_id=tweet_id)
@@ -291,7 +295,7 @@ class PostingPipeline:
             formatted_posts,
             notif_context,
             self.config.llm_api_key,
-            query="what is your post based on the TL"
+            query="what is your post based on the TL\n<tweet>"
         ).strip('"')
         print(f"New post content: {new_post_content}")
 
