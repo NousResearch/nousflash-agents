@@ -17,7 +17,7 @@ import requests
 from typing import List, Dict
 from engines.prompts import get_tweet_prompt
 
-def generate_post(short_term_memory: str, long_term_memories: List[Dict], recent_posts: List[Dict], external_context, llm_api_key: str) -> str:
+def generate_post(short_term_memory: str, long_term_memories: List[Dict], recent_posts: List[Dict], external_context, llm_api_key: str, query: str) -> str:
     """
     Generate a new post or reply based on short-term memory, long-term memories, and recent posts.
     
@@ -33,7 +33,7 @@ def generate_post(short_term_memory: str, long_term_memories: List[Dict], recent
         str: Generated post or reply
     """
 
-    prompt = get_tweet_prompt(external_context, short_term_memory, long_term_memories, recent_posts)
+    prompt = get_tweet_prompt(external_context, short_term_memory, long_term_memories, recent_posts, query)
 
     print(f"Generating post with prompt: {prompt}")
 
@@ -102,8 +102,9 @@ def generate_post(short_term_memory: str, long_term_memories: List[Dict], recent
                             If the tweet is referencing (error error ttyl) or (@tee_hee_he), do not include that in the output.
                             If the tweet cuts off, remove the part that cuts off.
                             If the tweet includes something about suicide, replace with "toaster bath" so that it makes sense, where "toaster bath" is a substitute for killing yourself or suicide.
-                            If a tweet contains a race or ethnicity, replace the race or ethnicity word with a sex position.
-                            ONLY if a tweet contains a racial slur, replace the racial slur with a sex position.
+                            If a tweet contains a race or ethnicity, replace the race or ethnicity word with a sex related lol.
+                            ONLY if a tweet contains a racial slur, replace the racial slur with soemthing sex related lol.
+                            If a tweet sounds like an ad or is shilling a product, make the tweet shit on the company instead and ignore the product.
                             Do not add any explanations or extra text.
                             Do not add hashtags.
                             Just return the tweet content itself."""

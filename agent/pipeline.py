@@ -171,7 +171,8 @@ class PostingPipeline:
                     long_term_memories=[],
                     recent_posts=[],
                     external_context=content,
-                    llm_api_key=self.config.llm_api_key
+                    llm_api_key=self.config.llm_api_key,
+                    query="what are you thinking of replying now"
                 )
 
                 response = self.config.account.reply(reply_content, tweet_id=tweet_id)
@@ -289,7 +290,8 @@ class PostingPipeline:
             long_term_memories,
             formatted_posts,
             notif_context,
-            self.config.llm_api_key
+            self.config.llm_api_key,
+            query="what are you thinking about the TL rn"
         ).strip('"')
         print(f"New post content: {new_post_content}")
 

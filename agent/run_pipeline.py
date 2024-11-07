@@ -173,8 +173,8 @@ class PipelineRunner:
     
     def get_wallet_information(self) -> Tuple[str, str]:
         """Retrieve wallet information from environment variables."""
-        private_key_hex = os.getenv("AGENT_WALLET_PRIVATE_KEY"),
-        eth_address = os.getenv("AGENT_WALLET_ADDRESS"),
+        private_key_hex = os.getenv("AGENT_WALLET_PRIVATE_KEY")
+        eth_address = os.getenv("AGENT_WALLET_ADDRESS")
         return private_key_hex, eth_address
 
     def get_api_keys(self) -> Dict[str, str]:
