@@ -143,10 +143,10 @@ class PipelineRunner:
     def __init__(self):
         self.setup_environment()
         self.db = next(get_db())
+        self.make_new_wallet = True
         self.config = self.create_config()
         self.pipeline = PostingPipeline(self.config)
         self.behavior_simulator = HumanBehaviorSimulator()  # Initialize the simulator
-        self.make_new_wallet = False
                 
     def setup_environment(self) -> None:
         """Initialize environment and database."""
