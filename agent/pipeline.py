@@ -1,5 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Tuple, Optional
+from collections import deque
 import json
 import os
 import time
@@ -26,6 +27,37 @@ from engines.wallet_send import transfer_eth, wallet_address_in_post, get_wallet
 from engines.follow_user import follow_by_username, decide_to_follow_users
 
 @dataclass
+class NotificationQueue:
+    """Queue to store filtered notifications and timeline posts."""
+    min_queue_size: int = 10
+    items: deque = field(default_factory=lambda: deque(maxlen=100))  # Store up to 50 items
+    processed_ids: set = field(default_factory=set)
+    
+    def add(self, content: str, tweet_id: str) -> None:
+        """Add an item to the queue if not already processed."""
+        if tweet_id not in self.processed_ids:
+            self.items.append((content, tweet_id))
+            self.processed_ids.add(tweet_id)
+    
+    def is_ready(self) -> bool:
+        """Check if queue has enough items to start processing."""
+        return len(self.items) >= self.min_queue_size
+    
+    def get_all(self) -> List[Tuple[str, str]]:
+        """Get all items from the queue and clear it."""
+        items = list(self.items)
+        return items
+    
+    def clear(self) -> None:
+        """Clear the queue."""
+        self.items.clear()
+        self.processed_ids.clear()
+    
+    def __len__(self) -> int:
+        return len(self.items)
+
+
+@dataclass
 class Config:
     """Configuration for the pipeline."""
     db: Session
@@ -49,6 +81,7 @@ class PostingPipeline:
     def __init__(self, config: Config):
         self.config = config
         self.ai_user = self._get_or_create_ai_user()
+        self.notification_queue = NotificationQueue()
 
     def _get_or_create_ai_user(self) -> User:
         """Get or create the AI user in the database."""
@@ -103,7 +136,7 @@ class PostingPipeline:
                 print(f"Error processing wallet data: {e}")
                 continue
 
-    def _handle_follows(self, notif_context: List[str]) -> None:
+    def _handle_follows(self, notif_context: List[str]) -> None: 
         """Process and execute follow decisions."""
         for _ in range(2):  # Max 2 attempts
             try:
@@ -239,6 +272,12 @@ class PostingPipeline:
 
         print(f"Filtered notifs: {filtered_notifs}")
         
+        # Add filtered notifications to the queue
+        for f_notif in filtered_notifs:
+            notif, tweet_id = f_notif[0], f_notif[1]
+            self.notification_queue.add(notif, tweet_id)
+            print(f"Added to queue: {notif[:100]}... (Tweet ID: {tweet_id})")
+
         # Store processed tweet IDs
         print("Storing processed tweet IDs")    
         for context in notif_context_tuple:
@@ -254,13 +293,21 @@ class PostingPipeline:
         self.config.db.commit()
         print("Processed tweets stored")
 
-        notif_context = [context[0] for context in filtered_notifs]
+         # If queue isn't ready, just store the tweet IDs and exit early
+        if not self.notification_queue.is_ready():
+            print(f"Queue not ready. Current size: {len(self.notification_queue)}")
+            return
+        
+        # Get all items from the queue and clear it
+        print("Queue ready for processing!")
+        filtered_notifs_from_queue = self.notification_queue.get_all()
+        notif_context = [context[0] for context in filtered_notifs_from_queue]
         print("New Notifications:")
-        for content, tweet_id in filtered_notifs:
+        for content, tweet_id in filtered_notifs_from_queue:
             print(f"- {content}, tweet at https://x.com/user/status/{tweet_id}\n")
 
         if notif_context:
-            self._handle_replies(filtered_notifs)
+            self._handle_replies(filtered_notifs_from_queue)
             time.sleep(5)
             
             self._handle_wallet_transactions(notif_context)
@@ -268,7 +315,7 @@ class PostingPipeline:
             
             self._handle_follows(notif_context)
             time.sleep(5)
-
+    
         # Generate and process memories
         short_term_memory = generate_short_term_memory(
             recent_posts,
@@ -332,6 +379,10 @@ class PostingPipeline:
                 self.config.db.add(new_post)
                 self.config.db.commit()
                 print(f"Posted with tweet_id: {tweet_id}")
+        
+        # Remove processed tweet IDs from the queue
+        self.notification_queue.clear()
+
     
     def is_spam(self, content: str) -> bool:
         import re
