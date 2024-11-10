@@ -278,6 +278,14 @@ class PostingPipeline:
             self.notification_queue.add(notif, tweet_id)
             print(f"Added to queue: {notif[:100]}... (Tweet ID: {tweet_id})")
 
+        self.config.db.commit()
+        print("Processed tweets stored")
+
+         # If queue isn't ready, just store the tweet IDs and exit early
+        if not self.notification_queue.is_ready():
+            print(f"Queue not ready. Current size: {len(self.notification_queue)}")
+            return
+        
         # Store processed tweet IDs
         print("Storing processed tweet IDs")    
         for context in notif_context_tuple:
@@ -289,14 +297,6 @@ class PostingPipeline:
                 print(f"Error processing tweet for storage: {e}")
                 print(f"Problematic context: {context}")
                 continue
-
-        self.config.db.commit()
-        print("Processed tweets stored")
-
-         # If queue isn't ready, just store the tweet IDs and exit early
-        if not self.notification_queue.is_ready():
-            print(f"Queue not ready. Current size: {len(self.notification_queue)}")
-            return
         
         # Get all items from the queue and clear it
         print("Queue ready for processing!")
