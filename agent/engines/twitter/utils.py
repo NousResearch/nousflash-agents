@@ -128,3 +128,32 @@ def process_twitter_json(json_data) -> str:
         return "Error: Invalid JSON data"
     except Exception as e:
         return f"Error processing data: {str(e)}"
+    
+
+def is_spam(self, content: str) -> bool:
+    import re
+    from unicodedata import normalize
+    # Normalize more aggressively: remove all whitespace, symbols, zero-width chars
+    clean = re.sub(r'[\s\.\-_\|\\/\(\)\[\]\u200b-\u200f\u2060\ufeff]+', '', 
+                   normalize('NFKC', content.lower()))
+    patterns = [
+        r'[\$\€\¢\£\¥]|(?:usd[t]?|usdc|busd)',  
+        r'(?:ca|с[aа]|market.?cap)[:\|/]?(?:\d|soon)',
+        r't[i1І]ck[e3Е]r|symb[o0]l|(?:trading|list).?pairs?',
+        r'p[uüūи][mм]p|рuмр|ⓟⓤⓜⓟ|accumulate',
+        r'(?:buy|sel[l1]|gr[a4]b|hurry|last.?chance|dont.?miss|act.?fast|limited|exclusive)[^.]{0,15}(?:now|fast|quick|soon|today)',
+        r'(?:\d+x|\d+[k%]|\d+x?(?:gains?|profit|roi|apy|returns?))',
+        r'(?:moon|rocket|profit|lambo|wealth|rich).{0,15}(?:soon|guaranteed|incoming|imminent)',
+        r'[🚀💎🌙⬆️📈💰💵💸🤑🔥⭐️🌟✨]+',
+        r'(?:diamond|gem|moon).?(?:hands?|hold|hodl)|hold?.?strong',
+        r'(?:to|2|two|II).?(?:the|da|d[4a]).?(?:moon|m[o0]n|m[о0]{2}n)',
+        r'\b(?:hodl|dyor|fomo|fud|wagmi|gm|ngmi|ath|altcoin|shitcoin|memecoin)\b',
+        r'(?:1000|k|thousand).?x',
+        r'(?:presale|private.?sale|ico|ido)',
+        r'(?:whitel[i1]st|guaranteed.?spots?)',
+        r'(?:low|small).?(?:cap|market.?cap)',
+        r'(?:nft|mint).?(?:drop|launch|sale)',
+        r'(?:early|earlybird|early.?access)',
+        r'(?:t\.me|discord\.gg|dex\.tools)',
+        ]
+    return any(re.search(p, clean) for p in patterns)
