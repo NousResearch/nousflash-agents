@@ -58,13 +58,14 @@ class PostingPipeline:
 
         filtered_notifs = self.post_retriever.filter_notifications(notif_context_tuple, existing_tweet_ids)
         
+
         self.notification_queue.add(filtered_notifications=filtered_notifs)
 
          # If queue isn't ready, just store the tweet IDs and exit early
         if not self.notification_queue.is_ready():
             print(f"Queue not ready. Current size: {len(self.notification_queue)}")
             return
-        
+
         # Store processed tweet IDs
         self.post_sender.store_processed_tweets(self.config.db, notif_context_tuple)
         
