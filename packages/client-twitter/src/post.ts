@@ -1,12 +1,12 @@
 import { Tweet } from "agent-twitter-client";
 import fs from "fs";
 import { composeContext } from "@ai16z/eliza/src/context.ts";
-import { generateText } from "@ai16z/eliza/src/generation.ts";
+import { generateText, generateFormatCompletion } from "@ai16z/eliza/src/generation.ts";
 import { embeddingZeroVector } from "@ai16z/eliza/src/memory.ts";
 import { IAgentRuntime, ModelClass } from "@ai16z/eliza/src/types.ts";
 import { stringToUuid } from "@ai16z/eliza/src/uuid.ts";
 import { ClientBase } from "./base.ts";
-
+import { settings } from "@ai16z/eliza/src/settings.ts";
 const twitterPostTemplate = `{{timeline}}
 
 {{providers}}
@@ -16,13 +16,14 @@ About {{agentName}} (@{{twitterUserName}}):
 {{lore}}
 {{postDirections}}
 
-{{recentPosts}}
-
 {{characterPostExamples}}
 
-# Task: Generate a post in the voice and style of {{agentName}}, aka @{{twitterUserName}}
-Write a single sentence post that is {{adjective}} about {{topic}} (without mentioning {{topic}} directly), from the perspective of {{agentName}}. Try to write something totally different than previous posts. Do not add commentary or ackwowledge this request, just write the post.
+# Task: Generate a post in the voice and style based on the post directions of {{agentName}}, aka @{{twitterUserName}}.
+Write a single sentence post that is {{adjective}} about {{topic}} (without mentioning {{topic}} directly), from the perspective of {{agentName}}. 
+Do not add commentary or ackwowledge this request, just write the post.
 Your response should not contain any questions. Brief, concise statements only. No emojis. Use \\n\\n (double spaces) between statements.`;
+
+// const twitterPostTemplate = settings.HYPERBOLIC_BASE_PROMPT;
 
 export class TwitterPostClient extends ClientBase {
     onReady() {
@@ -30,7 +31,7 @@ export class TwitterPostClient extends ClientBase {
             this.generateNewTweet();
             setTimeout(
                 generateNewTweetLoop,
-                (Math.floor(Math.random() * (20 - 2 + 1)) + 2) * 60 * 1000
+                (Math.floor(Math.random() * (5 - 2 + 1)) + 2) * 60 * 1000
             ); // Random interval between 4-8 hours
         };
         // setTimeout(() => {
@@ -99,14 +100,17 @@ export class TwitterPostClient extends ClientBase {
                     this.runtime.character.templates?.twitterPostTemplate ||
                     twitterPostTemplate,
             });
-
+            
+            console.log(`Beginning to generate new tweet with base model`);
             const newTweetContent = await generateText({
                 runtime: this.runtime,
                 context,
-                modelClass: ModelClass.SMALL,
+                modelClass: ModelClass.MEDIUM,
+                modelOverride: "hyperbolic"
             });
 
             const slice = newTweetContent.replaceAll(/\\n/g, "\n").trim();
+            console.log(`New Tweet Post Content with model: ${slice}`);
 
             const contentLength = 240;
 
@@ -124,6 +128,11 @@ export class TwitterPostClient extends ClientBase {
             if (content.length > contentLength) {
                 content = content.slice(0, content.lastIndexOf("."));
             }
+            
+            const formattedContent = await generateFormatCompletion(content)
+            content = formattedContent
+            console.log(`New Tweet Post Content after formatting: ${slice}`);
+
             try {
                 const result = await this.requestQueue.add(
                     async () => await this.twitterClient.sendTweet(content)

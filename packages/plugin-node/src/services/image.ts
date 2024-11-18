@@ -21,6 +21,7 @@ import fs from "fs";
 import gifFrames from "gif-frames";
 import os from "os";
 import path from "path";
+import { defaultCharacter } from "@ai16z/eliza/src/defaultCharacter.ts";
 
 export class ImageDescriptionService extends Service {
     private modelId: string = "onnx-community/Florence-2-base-ft";
@@ -48,6 +49,7 @@ export class ImageDescriptionService extends Service {
         }
 
         const model = models[runtime.character.settings.model];
+        console.log("Image Model", model);
 
         if (model === ModelProviderName.LLAMALOCAL) {
             this.modelId = "onnx-community/Florence-2-base-ft";

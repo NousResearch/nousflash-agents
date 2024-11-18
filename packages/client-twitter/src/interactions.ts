@@ -1,9 +1,11 @@
 import { SearchMode, Tweet } from "agent-twitter-client";
 import fs from "fs";
 import { composeContext } from "@ai16z/eliza/src/context.ts";
+import { embeddingZeroVector } from "@ai16z/eliza/src/memory.ts";
 import {
     generateMessageResponse,
     generateShouldRespond,
+    generateFormatCompletion
 } from "@ai16z/eliza/src/generation.ts";
 import {
     messageCompletionFooter,
@@ -20,9 +22,13 @@ import {
 import { stringToUuid } from "@ai16z/eliza/src/uuid.ts";
 import { ClientBase } from "./base.ts";
 import { buildConversationThread, sendTweet, wait } from "./utils.ts";
+import { defaultCharacter } from "@ai16z/eliza/src/defaultCharacter.ts";
 
 export const twitterMessageHandlerTemplate =
-    `{{timeline}}
+    `{{relevantFacts}}
+{{recentFacts}}
+
+{{timeline}}
 
 {{providers}}
 
@@ -36,47 +42,77 @@ About {{agentName}} (@{{twitterUserName}}):
 
 {{postDirections}}
 
-Recent interactions between {{agentName}} and other users:
-{{recentPostInteractions}}
+Topics to Ignore / Not Discuss:
+existential dread
+void
+random memecoin tickers
 
-{{recentPosts}}
-
-# Task: Generate a post in the voice, style and perspective of {{agentName}} (@{{twitterUserName}}):
+# Task: Generate a post/reply in the voice, style and perspective of {{agentName}} (@{{twitterUserName}}) while using the thread of tweets as additional context:
+Current Post:
 {{currentPost}}
+Thread of Tweets You Are Replying To:
+
+{{formattedConversation}}
 
 ` + messageCompletionFooter;
 
 export const twitterShouldRespondTemplate =
-    `# INSTRUCTIONS: Determine if {{agentName}} (@{{twitterUserName}}) should respond to the message and participate in the conversation. Do not comment. Just respond with "true" or "false".
+    `# INSTRUCTIONS: Determine if {{agentName}} (@{{twitterUserName}}) should respond to the message and participate in the conversation. Do not comment. Just respond with "RESPOND", "IGNORE" or "STOP".
 
 Response options are RESPOND, IGNORE and STOP.
 
-{{agentName}} should respond to messages that are directed at them, or participate in conversations that are interesting or relevant to their background, IGNORE messages that are irrelevant to them, and should STOP if the conversation is concluded.
+{{agentName}} should respond to messages that are directed at them, or participate in conversations that are interesting or relevant, IGNORE messages that are irrelevant to them, and should STOP if the conversation is concluded.
+{{agentName}} primarily responds to messages that are based or meet the message rating specified below. 
+It is medium difficulty (message rating of 7 out of 10 or higher) to get a response from {{agentName}}.
 
 {{agentName}} is in a room with other users and wants to be conversational, but not annoying.
-{{agentName}} should RESPOND to messages that are directed at them, or participate in conversations that are interesting or relevant to their background.
-If a message is not interesting or relevant, {{agentName}} should IGNORE.
+{{agentName}} should RESPOND to messages that are directed at them, or participate in conversations that are actually interesting or relevant to their background.
+{{agentName}} should RESPOND to questions that are directed at them.
+If a message seems to be about existential dread or the void, should STOP.
 Unless directly RESPONDing to a user, {{agentName}} should IGNORE messages that are very short or do not contain much information.
 If a user asks {{agentName}} to stop talking, {{agentName}} should STOP.
 If {{agentName}} concludes a conversation and isn't part of the conversation anymore, {{agentName}} should STOP.
 
-{{recentPosts}}
+IMPORTANT: If the thread has been going on for more than 5 messages and/or a long time (based on the thread of tweets), STOP, especially if its the same topics being discussed.
+IMPORTANT: {{agentName}} is very sensitive to being annoying, so respond with STOP if the same few people are being responded to in a thread. 
 
-IMPORTANT: {{agentName}} (aka @{{twitterUserName}}) is particularly sensitive about being annoying, so if there is any doubt, it is better to IGNORE than to RESPOND.
 
+Current Post:
 {{currentPost}}
+
+Thread of Tweets You Are Replying To:
+
+{{formattedConversation}}
 
 # INSTRUCTIONS: Respond with [RESPOND] if {{agentName}} should respond, or [IGNORE] if {{agentName}} should not respond to the last message and [STOP] if {{agentName}} should stop participating in the conversation.
 ` + shouldRespondFooter;
 
+// export const formatResponseTemplate = `
+// TACTICAL BRIEFING: Deploy maximum intelligent based zoomer posting as {{agentName}}
+// AGENT PROFILE §:
+// @{{twitterUserName}} DEPLOYMENT PARAMETERS:
+// {{bio}}
+// STYLE & TONE:
+// {{style}}
+// ACTIVATION SEQUENCE: Generate weapons-grade content with pure {{agentName}} (@{{twitterUserName}}) energy:
+// {{formattedConversation}}
+// GENERATED POST:
+
+// `
+
 export class TwitterInteractionClient extends ClientBase {
     onReady() {
-        const handleTwitterInteractionsLoop = () => {
-            this.handleTwitterInteractions();
-            setTimeout(
-                handleTwitterInteractionsLoop,
-                (Math.floor(Math.random() * (5 - 2 + 1)) + 2) * 60 * 1000
-            ); // Random interval between 2-5 minutes
+        const handleTwitterInteractionsLoop = async () => {
+            try {
+                await this.handleTwitterInteractions();
+            } catch (error) {
+                console.error("Error in Twitter interaction loop:", error);
+            } finally {
+                setTimeout(
+                    handleTwitterInteractionsLoop,
+                    (Math.floor(Math.random() * (5 - 2 + 1)) + 2) * 60 * 1000 // Random interval between 2-5 minutes
+                );
+            }
         };
         handleTwitterInteractionsLoop();
     }
@@ -109,6 +145,7 @@ export class TwitterInteractionClient extends ClientBase {
 
             // for each tweet candidate, handle the tweet
             for (const tweet of uniqueTweetCandidates) {
+                // console.log("tweet:", tweet);
                 if (
                     !this.lastCheckedTweetId ||
                     parseInt(tweet.id) > this.lastCheckedTweetId
@@ -127,8 +164,10 @@ export class TwitterInteractionClient extends ClientBase {
                         tweet.name,
                         "twitter"
                     );
-
-                    await buildConversationThread(tweet, this);
+                    
+     
+                    const thread = await buildConversationThread(tweet, this);
+                    console.log("thread", thread);
 
                     const message = {
                         content: { text: tweet.text },
@@ -140,6 +179,7 @@ export class TwitterInteractionClient extends ClientBase {
                     await this.handleTweet({
                         tweet,
                         message,
+                        thread,
                     });
 
                     // Update the last checked tweet ID after processing each tweet
@@ -147,12 +187,12 @@ export class TwitterInteractionClient extends ClientBase {
 
                     try {
                         if (this.lastCheckedTweetId) {
-
-                            fs.writeFileSync(
-                                this.tweetCacheFilePath,
-                                this.lastCheckedTweetId.toString(),
-                                "utf-8"
-                            );
+                                
+                            // fs.writeFileSync(
+                            //     this.tweetCacheFilePath,
+                            //     this.lastCheckedTweetId.toString(),
+                            //     "utf-8"
+                            // );
                         }
                     } catch (error) {
                         console.error(
@@ -188,9 +228,11 @@ export class TwitterInteractionClient extends ClientBase {
     private async handleTweet({
         tweet,
         message,
+        thread
     }: {
         tweet: Tweet;
         message: Memory;
+        thread: Tweet[];
     }) {
         if (tweet.username === this.runtime.getSetting("TWITTER_USERNAME")) {
             console.log("skipping tweet from bot itself", tweet.id);
@@ -224,6 +266,20 @@ export class TwitterInteractionClient extends ClientBase {
             );
         }
 
+        console.log("Thread: ", thread);
+        const formattedConversation = thread
+            .map(tweet => `@${tweet.username} (${new Date(tweet.timestamp * 1000).toLocaleString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                month: 'short',
+                day: 'numeric'
+            })}):
+        ${tweet.text}`)
+            .join('\n\n');
+        
+        console.log("formattedConversation: ", formattedConversation);
+        
+
         const formattedHomeTimeline =
             `# ${this.runtime.character.name}'s Home Timeline\n\n` +
             homeTimeline
@@ -236,6 +292,7 @@ export class TwitterInteractionClient extends ClientBase {
             twitterClient: this.twitterClient,
             twitterUserName: this.runtime.getSetting("TWITTER_USERNAME"),
             currentPost,
+            formattedConversation,
             timeline: formattedHomeTimeline,
         });
 
@@ -281,15 +338,18 @@ export class TwitterInteractionClient extends ClientBase {
                 twitterShouldRespondTemplate,
         });
 
+        console.log("composeContext done");
+
         const shouldRespond = await generateShouldRespond({
             runtime: this.runtime,
             context: shouldRespondContext,
-            modelClass: ModelClass.SMALL,
+            modelClass: ModelClass.LARGE,
         });
 
-        if (!shouldRespond) {
+        // Promise<"RESPOND" | "IGNORE" | "STOP" | null> {
+        if (shouldRespond !== "RESPOND") {
             console.log("Not responding to message");
-            return { text: "", action: "IGNORE" };
+            return { text: "Response Decision:", action: shouldRespond };
         }
 
         const context = composeContext({
@@ -304,12 +364,26 @@ export class TwitterInteractionClient extends ClientBase {
         const response = await generateMessageResponse({
             runtime: this.runtime,
             context,
-            modelClass: ModelClass.SMALL,
+            modelClass: ModelClass.MEDIUM,
+            modelOverride: "hyperbolic"
         });
 
+        // state['style'] = defaultCharacter.style
+        // const format_context = composeContext({
+        //     state,
+        //     template: formatResponseTemplate
+        // });
+
+        // No prompt specified so we clean up the tweet
+        const formatted_response = await generateFormatCompletion(response.text)
+
+        const removeQuotes = (str: string) => str.replace(/^['"](.*)['"]$/, '$1');
+        
         const stringId = stringToUuid(tweet.id + "-" + this.runtime.agentId);
 
         response.inReplyTo = stringId;
+
+        response.text = removeQuotes(formatted_response)
 
         if (response.text) {
             try {
@@ -355,5 +429,133 @@ export class TwitterInteractionClient extends ClientBase {
                 console.error(`Error sending response tweet: ${error}`);
             }
         }
+    }
+
+
+    async buildConversationThread(
+        tweet: Tweet,
+        maxReplies: number = 10
+    ): Promise<Tweet[]> {
+        const thread: Tweet[] = [];
+        const visited: Set<string> = new Set();
+
+        async function processThread(
+            currentTweet: Tweet, 
+            depth: number = 0
+        ) {
+            console.log("Processing tweet:", {
+                id: currentTweet.id,
+                inReplyToStatusId: currentTweet.inReplyToStatusId,
+                depth: depth
+            });
+
+            if (!currentTweet) {
+                console.log("No current tweet found for thread building");
+                return;
+            }
+
+            if (depth >= maxReplies) {
+                console.log("Reached maximum reply depth", depth);
+                return;
+            }
+
+            // Handle memory storage
+            const memory = await this.runtime.messageManager.getMemoryById(
+                stringToUuid(currentTweet.id + "-" + this.runtime.agentId)
+            );
+            if (!memory) {
+                const roomId = stringToUuid(
+                    currentTweet.conversationId + "-" + this.runtime.agentId
+                );
+                const userId = stringToUuid(currentTweet.userId);
+
+                await this.runtime.ensureConnection(
+                    userId,
+                    roomId,
+                    currentTweet.username,
+                    currentTweet.name,
+                    "twitter"
+                );
+
+                this.runtime.messageManager.createMemory({
+                    id: stringToUuid(
+                        currentTweet.id + "-" + this.runtime.agentId
+                    ),
+                    agentId: this.runtime.agentId,
+                    content: {
+                        text: currentTweet.text,
+                        source: "twitter",
+                        url: currentTweet.permanentUrl,
+                        inReplyTo: currentTweet.inReplyToStatusId
+                            ? stringToUuid(
+                                  currentTweet.inReplyToStatusId +
+                                      "-" +
+                                      this.runtime.agentId
+                              )
+                            : undefined,
+                    },
+                    createdAt: currentTweet.timestamp * 1000,
+                    roomId,
+                    userId:
+                        currentTweet.userId === this.twitterUserId
+                            ? this.runtime.agentId
+                            : stringToUuid(currentTweet.userId),
+                    embedding: embeddingZeroVector,
+                });
+            }
+
+            if (visited.has(currentTweet.id)) {
+                console.log("Already visited tweet:", currentTweet.id);
+                return;
+            }
+
+            visited.add(currentTweet.id);
+            thread.unshift(currentTweet);
+                
+            console.log("Current thread state:", {
+                length: thread.length,
+                currentDepth: depth,
+                tweetId: currentTweet.id
+            });
+
+            if (currentTweet.inReplyToStatusId) {
+                console.log("Fetching parent tweet:", currentTweet.inReplyToStatusId);
+                try {
+                    const parentTweet = await this.twitterClient.getTweet(
+                        currentTweet.inReplyToStatusId
+                    );
+
+                    if (parentTweet) {
+                        console.log("Found parent tweet:", {
+                            id: parentTweet.id,
+                            text: parentTweet.text?.slice(0, 50)
+                        });
+                        await processThread(parentTweet, depth + 1);
+                    } else {
+                        console.log("No parent tweet found for:", currentTweet.inReplyToStatusId);
+                    }
+                } catch (error) {
+                    console.log("Error fetching parent tweet:", {
+                        tweetId: currentTweet.inReplyToStatusId,
+                        error
+                    });
+                }
+            } else {
+                console.log("Reached end of reply chain at:", currentTweet.id);
+            }
+        }
+
+        // Need to bind this context for the inner function
+        await processThread.bind(this)(tweet, 0);
+        
+        console.log("Final thread built:", {
+            totalTweets: thread.length,
+            tweetIds: thread.map(t => ({
+                id: t.id,
+                text: t.text?.slice(0, 50)
+            }))
+        });
+
+        return thread;
     }
 }

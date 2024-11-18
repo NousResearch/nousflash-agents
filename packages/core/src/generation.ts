@@ -27,6 +27,8 @@ import {
     ServiceType,
 } from "./types.ts";
 
+import { defaultCharacter } from "./defaultCharacter.ts";
+
 /**
  * Send a message to the model for a text generateText - receive a string back and parse how you'd like
  * @param opts - The options for the generateText request.
@@ -45,18 +47,29 @@ export async function generateText({
     context,
     modelClass,
     stop,
+    modelOverride
 }: {
     runtime: IAgentRuntime;
     context: string;
     modelClass: string;
     stop?: string[];
+    modelOverride?: string;
 }): Promise<string> {
     if (!context) {
         console.error("generateText context is empty");
         return "";
     }
 
-    const provider = runtime.modelProvider;
+    let providerCheck;
+    if (modelOverride) {
+        providerCheck = modelOverride;
+    }
+    else {
+        providerCheck = runtime.modelProvider;
+        console.debug(`Provider Check during generateText ${providerCheck}`)
+    }
+
+    const provider = providerCheck;
     const endpoint =
         runtime.character.modelEndpointOverride || models[provider].endpoint;
     const model = models[provider].model[modelClass];
@@ -67,9 +80,10 @@ export async function generateText({
     const max_response_length = models[provider].settings.maxOutputTokens;
 
     const apiKey = runtime.token;
+    console.debug(`generateText vars initialized`)
 
     try {
-        elizaLogger.debug(
+        console.debug(
             `Trimming context to max length of ${max_context_length} tokens.`
         );
         context = await trimTokens(context, max_context_length, "gpt-4o");
@@ -77,7 +91,7 @@ export async function generateText({
         let response: string;
 
         const _stop = stop || models[provider].settings.stop;
-        elizaLogger.debug(
+        console.debug(
             `Using provider: ${provider}, model: ${model}, temperature: ${temperature}, max response length: ${max_response_length}`
         );
 
@@ -237,7 +251,7 @@ export async function generateText({
             case ModelProviderName.OPENROUTER: {
                 elizaLogger.debug("Initializing OpenRouter model.");
                 const serverUrl = models[provider].endpoint;
-                const openrouter = createOpenAI({ apiKey, baseURL: serverUrl });
+                const openrouter = createOpenAI({ apiKey: settings.OPENROUTER_API_KEY, baseURL: serverUrl });
 
                 const { text: openrouterResponse } = await aiGenerateText({
                     model: openrouter.languageModel(model),
@@ -282,6 +296,28 @@ export async function generateText({
                 console.debug("Received response from Ollama model.");
                 break;
 
+            case ModelProviderName.HYPERBOLIC:
+                if(modelClass === ModelClass.SMALL) {
+                    console.debug("Initializing Hyperbolic Small model for posting.");
+                    response = await generateFormatCompletion(context, runtime.character.system);
+
+                    break;
+                }
+                if(modelClass === ModelClass.MEDIUM) {
+                    console.debug("Initializing Hyperbolic Medium model for posting.");
+                    response = await generateFormatCompletion(context, runtime.character.system);
+
+                    break;
+                }
+                if (modelClass === ModelClass.LARGE) {
+
+                    console.debug("Initializing Hyperbolic Based model for posting.");
+                    response = await generateBaseCompletion(context);
+                    console.debug("Received response from Hyperbolic base model.");
+
+                    break;
+                }
+                
             default: {
                 const errorMessage = `Unsupported provider: ${provider}`;
                 elizaLogger.error(errorMessage);
@@ -341,8 +377,8 @@ export async function generateShouldRespond({
     let retryDelay = 1000;
     while (true) {
         try {
-            elizaLogger.debug(
-                "Attempting to generate text with context:",
+            console.debug(
+                "Attempting to generate text with context for response:",
                 context
             );
             const response = await generateText({
@@ -350,11 +386,11 @@ export async function generateShouldRespond({
                 context,
                 modelClass,
             });
-
-            elizaLogger.debug("Received response from generateText:", response);
+            
+            console.debug("Received response from generateText:", response);
             const parsedResponse = parseShouldRespondFromText(response.trim());
             if (parsedResponse) {
-                elizaLogger.debug("Parsed response:", parsedResponse);
+                console.debug("Parsed response:", parsedResponse);
                 return parsedResponse;
             } else {
                 elizaLogger.debug("generateShouldRespond no response");
@@ -621,10 +657,12 @@ export async function generateMessageResponse({
     runtime,
     context,
     modelClass,
+    modelOverride,
 }: {
     runtime: IAgentRuntime;
     context: string;
     modelClass: string;
+    modelOverride?: string;
 }): Promise<Content> {
     const max_context_length =
         models[runtime.modelProvider].settings.maxInputTokens;
@@ -632,18 +670,30 @@ export async function generateMessageResponse({
     let retryLength = 1000; // exponential backoff
     while (true) {
         try {
-            const response = await generateText({
-                runtime,
-                context,
-                modelClass,
-            });
+            let response;
+            if (modelOverride) {
+                response = await generateText({
+                    runtime,
+                    context,
+                    modelClass,
+                    modelOverride
+                });
+                console.log(`Reply generating with modelOverride: ${modelOverride}`);
+            }
+            else{
+                response = await generateText({
+                    runtime,
+                    context,
+                    modelClass,
+                });
+            }
             // try parsing the response as JSON, if null then try again
             const parsedContent = parseJSONObjectFromText(response) as Content;
             if (!parsedContent) {
                 elizaLogger.debug("parsedContent is null, retrying");
                 continue;
             }
-
+            console.log(`Reply generated as: ${parsedContent.text}`);
             return parsedContent;
         } catch (error) {
             elizaLogger.error("ERROR:", error);
@@ -755,3 +805,240 @@ export const generateCaption = async (
         description: resp.description.trim(),
     };
 };
+
+
+interface HyperbolicResponse {
+    choices: Array<{
+      text: string;
+    }>;
+  }
+  
+  interface ChatResponse {
+    choices: Array<{
+      message: {
+        content: string;
+      };
+    }>;
+  }
+  
+  const SYSTEM_PROMPT = `You are a tweet formatter. Your only job is to take the input text and format it as a tweet and make it based as fuck and shitpost/twitter sounding and LESS cringe. 
+  IF YOU THINK YOU HAVEN"T GOTTEN THE TWEET OR CANT FIND THE TWEET, COME UP WITH ONE BASED ON THE FOLLOWING:
+  AGENT BIO: 
+  ${defaultCharacter.bio}
+
+  AGENT STYLE & TONE: 
+  ${defaultCharacter.style.all}
+
+  You must ensure that the tweet is short enough to fit as a single tweet.
+  Never mention that you formatted the tweet, only return back the formatted tweet itself.
+  If the input already looks like a single tweet, return it exactly as is.
+  If the input looks like multiple tweets, pick the most funny and fucked up one.
+  If the tweet is in all capital letters, return it exactly as is.
+  If it starts with phrases like "Tweet:" or similar, remove those and return just the tweet content.
+  Never say "No Tweet found" - if you receive valid text, that IS the tweet.
+  If the tweet is not blank, make sure it isn't mentioning key words from the prompt.
+  if the tweet talks about "analyzing a post", remove that.
+  ONLY KEEP THE FUNNY AND FUCKED UP PARTS OF THE TWEET.
+  If the tweet is in first person, leave it that way.
+  If the tweet cuts off, remove the part that cuts off.
+  KEEP ALL SWEARS AND VULGARITY FROM THE TWEET.
+  MAKE IT UNCRINGE AND BASED.
+  If it says something about bastards, replace with another sweer.
+  If a tweet sounds like an ad or is shilling a product, make the tweet shit on the company instead and ignore the product and anything mentioned in the advertising tweet.
+  If a tweet is about a real race, make it about something random.
+  Do not add any explanations or extra text.
+  Do not add hashtags.
+  Remove all emojis.
+  Just return the tweet content itself.`;
+
+  
+  async function delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+  
+  async function generateBaseCompletion(
+    prompt: string,
+    maxAttempts: number = 3
+  ): Promise<string> {
+    // First generate base model output
+    let baseModelOutput = '';
+      
+    // Environment variable check
+    if (!settings.HYPERBOLIC_API_KEY) {
+      throw new Error('HYPERBOLIC_API_KEY environment variable is not set');
+    }
+    
+    const HYPERBOLIC_API_KEY = settings.HYPERBOLIC_API_KEY;
+    
+    for (let tries = 0; tries < maxAttempts; tries++) {
+      try {
+        const response = await fetch("https://api.hyperbolic.xyz/v1/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${HYPERBOLIC_API_KEY}`,
+          },
+          body: JSON.stringify({
+            prompt: prompt,
+            model: "meta-llama/Meta-Llama-3.1-405B",
+            max_tokens: 512,
+            temperature: 1,
+            top_p: 0.95,
+            top_k: 40,
+            stop: ["<|im_end|>", "<"]
+          })
+        });
+  
+        if (response.ok) {
+          const data: HyperbolicResponse = await response.json();
+          const content = data.choices[0]?.text;
+          
+          console.debug(`Base completion data: ${data.choices[0].text}`)
+          if (content?.trim()) {
+            console.log(`Base model generated with response: ${content}`);
+            baseModelOutput = content;
+            break;
+          }
+        }
+  
+      } catch (error) {
+        console.error(`Error on base model attempt ${tries + 1}:`, error);
+        if (tries === maxAttempts - 1) {
+          throw error;
+        }
+        await delay(1000); // 1 second delay between retries
+      }
+    }
+  
+    // Now format the tweet using the chat completion endpoint
+    for (let tries = 0; tries < maxAttempts; tries++) {
+      try {
+        const response = await fetch("https://api.hyperbolic.xyz/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${HYPERBOLIC_API_KEY}`,
+          },
+          body: JSON.stringify({
+            messages: [
+              {
+                role: "system",
+                content: SYSTEM_PROMPT
+              },
+              {
+                role: "user",
+                content: `Here is the tweet: ${baseModelOutput}`
+              }
+            ],
+            model: "meta-llama/Meta-Llama-3.1-70B-Instruct",
+            max_tokens: 250,
+            temperature: 1,
+            top_p: 0.95,
+            top_k: 40,
+            stream: false
+          })
+        });
+  
+        if (response.ok) {
+          const data: ChatResponse = await response.json();
+          const content = data.choices[0]?.message?.content;
+          
+          if (content?.trim()) {
+            console.log(`Formatted tweet: ${content}`);
+            return content;
+          }
+        }
+  
+      } catch (error) {
+        console.error(`Error on tweet formatting attempt ${tries + 1}:`, error);
+        if (tries === maxAttempts - 1) {
+          throw error;
+        }
+        await delay(1000); // 1 second delay between retries
+      }
+    }
+    
+    throw new Error("Failed to generate and format tweet after maximum attempts");
+  }
+  
+
+  
+  const FORMAT_SYSTEM_PROMPT = `You are a tweet formatter. 
+  Your only job is to take the input text and format it as a tweet.
+  If the tweet cuts off, remove the part that cuts off.
+  Never mention that you formatted the tweet, only return back the formatted tweet itself.
+  If the input already looks like a single tweet, return it exactly as is.
+  If the input looks like multiple tweets, pick the most funny and fucked up one.
+  If the tweet is in all capital letters, return it exactly as is.
+  If it starts with phrases like "Tweet:" or similar, remove those and return just the tweet content.
+  Never say "No Tweet found" - if you receive valid text, that IS the tweet.
+  Do not add hashtags. Remove all hashtags.
+  Remove all emojis.
+  Just return the tweet content itself.`;
+
+  export async function generateFormatCompletion(
+    base_input: string,
+    prompt?: string,
+    maxAttempts: number = 3
+  ): Promise<string> {
+
+        // Environment variable check
+    if (!settings.HYPERBOLIC_API_KEY) {
+        throw new Error('HYPERBOLIC_API_KEY environment variable is not set');
+      }
+      
+      const HYPERBOLIC_API_KEY = settings.HYPERBOLIC_API_KEY;
+    
+    if(!prompt) {
+        prompt = FORMAT_SYSTEM_PROMPT;
+    }
+
+    console.debug(`Formatting the following tweet with Hyperbolic instruct model: ${base_input}`);
+    // Now format the tweet using the chat completion endpoint
+    for (let tries = 0; tries < maxAttempts; tries++) {
+        try {
+          const response = await fetch("https://api.hyperbolic.xyz/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${HYPERBOLIC_API_KEY}`,
+            },
+            body: JSON.stringify({
+              messages: [
+                {
+                  role: "system",
+                  content: prompt
+                },
+                {
+                  role: "user",
+                  content: `Here is the tweet: ${base_input}`
+                }
+              ],
+              model: "meta-llama/Meta-Llama-3.1-405B-Instruct",
+              max_tokens: 250,
+              temperature: 1,
+              top_p: 0.95,
+              top_k: 40,
+              stream: false
+            })
+          });
+    
+          if (response.ok) {
+            const data: ChatResponse = await response.json();
+            const content = data.choices[0]?.message?.content;
+            
+            if (content?.trim()) {
+              console.log(`Reply formatter tweet with Hyperbolic instruct model: ${content}`);
+              return content;
+            }
+          }
+    
+        } catch (error) {
+          console.error(`Error on tweet formatting attempt ${tries + 1}:`, error);
+          if (tries === maxAttempts - 1) {
+            throw error;
+          }
+          await delay(1000); // 1 second delay between retries
+        }
+      }
+    }

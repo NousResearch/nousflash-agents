@@ -114,6 +114,7 @@ export type Models = {
     [ModelProviderName.REDPILL]: Model;
     [ModelProviderName.OPENROUTER]: Model;
     [ModelProviderName.OLLAMA]: Model;
+    [ModelProviderName.HYPERBOLIC]: Model;
 };
 
 export enum ModelProviderName {
@@ -128,6 +129,7 @@ export enum ModelProviderName {
     REDPILL = "redpill",
     OPENROUTER = "openrouter",
     OLLAMA = "ollama",
+    HYPERBOLIC = "hyperbolic",
 }
 
 /**
@@ -157,6 +159,7 @@ export interface State {
     responseData?: Content; // An optional content object representing the agent's response in the current state.
     recentInteractionsData?: Memory[]; // An optional array of memory objects representing recent interactions in the conversation.
     recentInteractions?: string; // An optional string representation of recent interactions in the conversation.
+    formattedConversation?: string; // An optional string representation of the formatted Twitter thread conversation.
     [key: string]: unknown; // Allows for additional properties to be included dynamically.
 }
 
@@ -581,7 +584,7 @@ export interface IAgentRuntime {
 
 export interface IImageDescriptionService extends Service {
     getInstance(): IImageDescriptionService;
-    initialize(modelId?: string | null, device?: string | null): Promise<void>;
+    initialize(device: string | null, runtime: IAgentRuntime): Promise<void>;  // Updated to match implementation
     describeImage(
         imageUrl: string
     ): Promise<{ title: string; description: string }>;

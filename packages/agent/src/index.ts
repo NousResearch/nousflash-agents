@@ -197,6 +197,7 @@ export async function initializeClients(
 
     if (clientTypes.includes("telegram")) {
         const telegramClient = await TelegramClientInterface.start(runtime);
+        console.log("telegramClient", telegramClient)
         if (telegramClient) clients.push(telegramClient);
     }
 

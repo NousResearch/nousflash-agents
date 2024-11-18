@@ -52,7 +52,7 @@ export class AgentRuntime implements IAgentRuntime {
      * Default count for recent messages to be kept in memory.
      * @private
      */
-    readonly #conversationLength = 32 as number;
+    readonly #conversationLength = 8 as number;
     /**
      * The ID of the agent
      */

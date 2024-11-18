@@ -323,7 +323,7 @@ export class TwitterSearchClient extends ClientBase {
                 const responseInfo = `Context:\n\n${context}\n\nSelected Post: ${selectedTweet.id} - ${selectedTweet.username}: ${selectedTweet.text}\nAgent's Output:\n${response.text}`;
                 const debugFileName = `tweetcache/tweet_generation_${selectedTweet.id}.txt`;
 
-                fs.writeFileSync(debugFileName, responseInfo);
+                // fs.writeFileSync(debugFileName, responseInfo);
                 await wait();
             } catch (error) {
                 console.error(`Error sending response post: ${error}`);

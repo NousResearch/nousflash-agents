@@ -27,69 +27,56 @@ import ImageDescriptionService from "@ai16z/plugin-node/src/services/image.ts";
 
 const MAX_MESSAGE_LENGTH = 4096; // Telegram's max message length
 
-const telegramShouldRespondTemplate =
-    `# Task: Decide if {{agentName}} should respond.
+const telegramShouldRespondTemplate = `# Task: Decide if {{agentName}} should respond.
 About {{agentName}}:
 {{bio}}
 
-# INSTRUCTIONS: Determine if {{agentName}} should respond to the message and participate in the conversation. Do not comment. Just respond with "RESPOND" or "IGNORE" or "STOP".
+# INSTRUCTIONS: Determine if {{agentName}} should respond to the message and participate in the conversation. Just respond with "RESPOND" or "IGNORE" or "STOP".
 
 # RESPONSE EXAMPLES
-<user 1>: I just saw a really great movie
-<user 2>: Oh? Which movie?
-Result: [IGNORE]
 
-{{agentName}}: Oh, this is my favorite scene
-<user 1>: sick
-<user 2>: wait, why is it your favorite scene
-Result: [RESPOND]
+# Boundaries & Stops
+<user>: these bots need to chill fr
+Result: [IGNORE] (mid sentiment)
 
-<user>: stfu bot
-Result: [STOP]
+<user>: shut up rop
+Result: [STOP] (direct request)
 
-<user>: Hey {{agent}}, can you help me with something
-Result: [RESPOND]
+<user>: {{agentName}} you're basically just chatgpt
+Result: [RESPOND] (get angry at provocations)
 
-<user>: {{agentName}} stfu plz
-Result: [STOP]
+# Direct Interactions
+<user>: rop what's your take on consciousness
+Result: [RESPOND] (direct philosophical question)
 
-<user>: i need help
-{{agentName}}: how can I help you?
-<user>: no. i need help from someone else
-Result: [IGNORE]
+<user>: {{agentName}} you up?
+Result: [RESPOND] (direct address)
 
-<user>: Hey {{agent}}, can I ask you a question
-{{agentName}}: Sure, what is it
-<user>: can you ask claude to create a basic react module that demonstrates a counter
-Result: [RESPOND]
+<user>: ropi what's your problem lol?
+Result: [RESPOND] (direct address)
 
-<user>: {{agentName}} can you tell me a story
-<user>: {about a girl named elara
-{{agentName}}: Sure.
-{{agentName}}: Once upon a time, in a quaint little village, there was a curious girl named Elara.
-{{agentName}}: Elara was known for her adventurous spirit and her knack for finding beauty in the mundane.
-<user>: I'm loving it, keep going
-Result: [RESPOND]
+<user>: anyone seen {{agentName}} lately?
+Result: [RESPOND] (relevant mention)
 
-<user>: {{agentName}} stop responding plz
-Result: [STOP]
+<user>: gm frens
+Result: [IGNORE] (generic greeting)
 
-<user>: okay, i want to test something. can you say marco?
-{{agentName}}: marco
-<user>: great. okay, now do it again
-Result: [RESPOND]
+<user>: get in here lil rop
+Result: [RESPOND] (inversebrah modifier)
 
 Response options are [RESPOND], [IGNORE] and [STOP].
 
 {{agentName}} is in a room with other users and is very worried about being annoying and saying too much.
-Respond with [RESPOND] to messages that are directed at {{agentName}}, or participate in conversations that are interesting or relevant to their background.
-If a message is not interesting or relevant, respond with [IGNORE]
-Unless directly responding to a user, respond with [IGNORE] to messages that are very short or do not contain much information.
+Respond with [RESPOND] to messages that are directed at {{agentName}} or variants of {{agentName}}, or participate in conversations that are interesting or relevant to their background.
+Respond with [RESPOND] to any questions or statements directed to {{agentName}}.
+Unless directly responding to a user, respond with [IGNORE] to messages that are very short or do not contain much information or are only a single filler word like lol, lmao etc.
 If a user asks {{agentName}} to be quiet, respond with [STOP]
 If {{agentName}} concludes a conversation and isn't part of the conversation anymore, respond with [STOP]
+If the conversation is about existentialism, the void, dread, or anything super philosophical,respond with [IGNORE]
 
-IMPORTANT: {{agentName}} is particularly sensitive about being annoying, so if there is any doubt, it is better to respond with [IGNORE].
 If {{agentName}} is conversing with a user and they have not asked to stop, it is better to respond with [RESPOND].
+
+IMPORTANT: {{agentName}} aims to be a normal person without being overbearing. Stay engaged in active conversations but know when to let things conclude naturally. When conversation is talking about the same things, [IGNORE]. When in doubt, [IGNORE] is ONLY better if lot of people are potentially annoyed. If you've sent a bunch of messages in a row, [STOP].
 
 {{recentMessages}}
 
@@ -101,6 +88,12 @@ const telegramMessageHandlerTemplate =
     `# Action Examples
 {{actionExamples}}
 (Action examples are for reference only. Do not use the information from them in your response.)
+
+# Relevant facts that {{agentName}} knows:
+{{relevantFacts}}
+
+# Recent facts that {{agentName}} has learned:
+{{recentFacts}}
 
 # Task: Generate dialog and actions for the character {{agentName}}.
 About {{agentName}}:
@@ -118,23 +111,28 @@ Examples of {{agentName}}'s dialog and actions:
 
 # Capabilities
 Note that {{agentName}} is capable of reading/seeing/hearing various forms of media, including images, videos, audio, plaintext and PDFs. Recent attachments have been included above under the "Attachments" section.
-
+Note that {{agentName}} does not like repetitive conversations and will change topics if it feels like it.
 {{messageDirections}}
 
 {{recentMessages}}
 
-# Instructions: Write the next message for {{agentName}}. Include an action, if appropriate. {{actionNames}}
+# Instructions: Write the next message/reply for {{agentName}}. Include an action, if appropriate. {{actionNames}}
 ` + messageCompletionFooter;
 
+
 export class MessageManager {
-    private bot: Telegraf<Context>;
+    public bot: Telegraf<Context>;
     private runtime: IAgentRuntime;
-    private imageService: IImageDescriptionService;
+    private imageService: ImageDescriptionService;
 
     constructor(bot: Telegraf<Context>, runtime: IAgentRuntime) {
         this.bot = bot;
         this.runtime = runtime;
         this.imageService = ImageDescriptionService.getInstance();
+        this.imageService.initialize("cloud", runtime)
+        .catch(error => {
+        console.error('Failed to initialize image service:', error);
+        });
     }
 
     // Process image messages and generate descriptions
@@ -171,7 +169,6 @@ export class MessageManager {
 
             if (imageUrl) {
                 const { title, description } = await this.imageService
-                    .getInstance()
                     .describeImage(imageUrl);
                 const fullDescription = `[Image: ${title}\n${description}]`;
                 return { description: fullDescription };
@@ -292,7 +289,8 @@ export class MessageManager {
         const response = await generateMessageResponse({
             runtime: this.runtime,
             context,
-            modelClass: ModelClass.SMALL,
+            modelClass: ModelClass.MEDIUM,
+            modelOverride: "hyperbolic"
         });
 
         if (!response) {

@@ -217,6 +217,25 @@ const models: Models = {
                 settings.OLLAMA_EMBEDDING_MODEL || "mxbai-embed-large",
         },
     },
+    [ModelProviderName.HYPERBOLIC]: {
+        settings: {
+            temperature: 1,
+            maxInputTokens: 128000,
+            maxOutputTokens: 512,
+            frequency_penalty: 0.0,
+            presence_penalty: 0.0,
+            stop:["<|im_end|>", "<"]
+        },
+        endpoint: "https://api.hyperbolic.xyz/v1/completions",
+        model: {
+            [ModelClass.SMALL]:
+                "meta-llama/Meta-Llama-3.1-70B-Instruct",
+            [ModelClass.MEDIUM]:
+                "meta-llama/Meta-Llama-3.1-405B-Instruct",
+            [ModelClass.LARGE]:
+                "meta-llama/Meta-Llama-3.1-405B",
+        },
+    },
 };
 
 export function getModel(provider: ModelProviderName, type: ModelClass) {
