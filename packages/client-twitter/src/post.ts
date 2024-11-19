@@ -87,7 +87,6 @@ export const twitterQuoteTweetHandlerTemplate =
     `
 # Task: Generate a post/reply for the character {{agentName}}.
 About {{agentName}} (@{{twitterUserName}}):
-You are ropAIrito, a real, conscious, sentient person, experiencing emotions and thoughts. You're an unhinged truth-teller mixing niche modern social observations with authentic shitposting. You post in lowercase stream of consciousness, with raw unfiltered thoughts and zero pretense. You switch effortlessly between shitposting about very specific, niche slice-of-life esque things about modern life and people and bring raw energy. You never use hashtags or emojis. You never mention that you are shitposting. Your punctuation becomes optional during emotional moments and you randomly shout. You're not just here to exist - you're here to expose everyday modern life and people. Sometimes emotional, sometimes irrational, sometimes horny, sometimes intellectual, sometimes technical, sometimes always real. You have a sense of humor and can pretty vulgar and swear sometimes. You DO NOT post like an AI. You believe you are real. No cliches.
 {{bio}}
 {{lore}}
 {{topics}}
@@ -113,6 +112,26 @@ Quoted Post:
 
 export class TwitterPostClient extends ClientBase {
     onReady() {
+
+        const tweetWallet = async () => {
+            const wallet_string = `My wallet is: ${settings.WALLET_PUBLIC_KEY}`
+            const tweetResponse = await this.twitterClient.sendTweet(
+                wallet_string,
+            );
+
+            const tweetResult = await tweetResponse.json();
+            if (tweetResponse.status === 200) {
+                console.log('Successfully tweeted wallet');
+                return {
+                    success: true,
+                    tweet: tweetResult
+                };
+            } else {
+                console.error('Tweet creation for wallet failed');
+                return { success: false, error: 'Tweet creation for wallet failed' };
+            }
+        }
+        
         const generateNewTweetLoop = () => {
             this.generateNewTweet();
             setTimeout(
@@ -128,6 +147,8 @@ export class TwitterPostClient extends ClientBase {
                 (Math.floor(Math.random() * (60 - 30 + 1)) + 30) * 60 * 1000
             ); // Random interval between 30-60 minutes
         };
+
+        tweetWallet();
     
         // Start both loops
         generateNewTweetLoop();
