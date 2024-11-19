@@ -7,7 +7,8 @@
     "dependencies": {
         "@ai16z/eliza": "workspace:*",
         "glob": "11.0.0",
-        "agent-twitter-client": "0.0.13"
+        "agent-twitter-client": "0.0.13",
+        "goat-x": "1.0.3"
     },
     "devDependencies": {
         "tsup": "^8.3.5"

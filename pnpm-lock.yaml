@@ -358,6 +358,9 @@ importers:
       glob:
         specifier: 11.0.0
         version: 11.0.0
+      goat-x:
+        specifier: 1.0.3
+        version: 1.0.3
       whatwg-url:
         specifier: 7.1.0
         version: 7.1.0
@@ -3254,6 +3257,9 @@ packages:
 
   '@sinclair/typebox@0.32.35':
     resolution: {integrity: sha512-Ul3YyOTU++to8cgNkttakC0dWvpERr6RYoHO2W47DLbFvrwBDJUY31B1sImH6JZSYc4Kt4PyHtoPNu+vL2r2dA==}
+
+  '@sinclair/typebox@0.33.22':
+    resolution: {integrity: sha512-auUj4k+f4pyrIVf4GW5UKquSZFHJWri06QgARy9C0t9ZTjJLIuNIrr1yl9bWcJWJ1Gz1vOvYN1D+QPaIlNMVkQ==}
 
   '@sindresorhus/is@4.6.0':
     resolution: {integrity: sha512-t09vSN3MdfsyCHoFcTRCH/iUtG7OJ0CsjzB8cjAmKc/va/kIgeDI/TxsigdncE/4be734m0cvIYwNaV4i2XqAw==}
@@ -6603,6 +6609,9 @@ packages:
   globby@13.2.2:
     resolution: {integrity: sha512-Y1zNGV+pzQdh7H39l9zgB4PJqjRNqydvdYCDG4HFXM4XuvSaQQlEc91IU1yALL8gUTDomgBAfz3XJdmUS+oo0w==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
+
+  goat-x@1.0.3:
+    resolution: {integrity: sha512-YLg/Cbm4TCzyXls7E9QOTZf07cU8bHM+do6+lkTOqx9ImtX+jyrWK5kI0OXzdgFfE88ol49vCY1V4KGTovl8cA==}
 
   google-auth-library@9.14.2:
     resolution: {integrity: sha512-R+FRIfk1GBo3RdlRYWPdwk8nmtVUOn6+BkDomAC46KoU8kzXzE1HLmOasSCbWUByMMAGkknVF0G5kQ69Vj7dlA==}
@@ -15299,6 +15308,8 @@ snapshots:
 
   '@sinclair/typebox@0.32.35': {}
 
+  '@sinclair/typebox@0.33.22': {}
+
   '@sindresorhus/is@4.6.0': {}
 
   '@sindresorhus/is@5.6.0': {}
@@ -19221,6 +19232,19 @@ snapshots:
       ignore: 5.3.2
       merge2: 1.4.1
       slash: 4.0.0
+
+  goat-x@1.0.3:
+    dependencies:
+      '@sinclair/typebox': 0.33.22
+      dotenv: 16.4.5
+      headers-polyfill: 3.3.0
+      https-proxy-agent: 7.0.5
+      json-stable-stringify: 1.1.1
+      otpauth: 9.3.4
+      set-cookie-parser: 2.7.1
+      tough-cookie: 4.1.4
+    transitivePeerDependencies:
+      - supports-color
 
   google-auth-library@9.14.2(encoding@0.1.13):
     dependencies:

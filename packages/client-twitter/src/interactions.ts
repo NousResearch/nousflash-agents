@@ -1,4 +1,4 @@
-import { SearchMode, Tweet } from "agent-twitter-client";
+import { SearchMode, Tweet } from "goat-x";
 import fs from "fs";
 import { composeContext } from "@ai16z/eliza/src/context.ts";
 import { embeddingZeroVector } from "@ai16z/eliza/src/memory.ts";

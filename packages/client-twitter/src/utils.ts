@@ -1,4 +1,4 @@
-import { Tweet } from "agent-twitter-client";
+import { Tweet } from "goat-x";
 import { embeddingZeroVector } from "@ai16z/eliza/src/memory.ts";
 import { Content, Memory, UUID } from "@ai16z/eliza/src/types.ts";
 import { stringToUuid } from "@ai16z/eliza/src/uuid.ts";
@@ -27,6 +27,7 @@ export const isValidTweet = (tweet: Tweet): boolean => {
         totalCount <= 3
     );
 };
+
 
 export async function buildConversationThread(
     tweet: Tweet,

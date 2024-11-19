@@ -1,4 +1,4 @@
-import { SearchMode } from "agent-twitter-client";
+import { SearchMode } from "goat-x";
 import fs from "fs";
 import { composeContext } from "@ai16z/eliza/src/context.ts";
 import {

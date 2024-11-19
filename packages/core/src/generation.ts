@@ -2,7 +2,7 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGroq } from "@ai-sdk/groq";
 import { createOpenAI } from "@ai-sdk/openai";
 import { getModel } from "./models.ts";
-import { IImageDescriptionService, ModelClass } from "./types.ts";
+import { IImageDescriptionService, ModelClass, ActionResponse } from "./types.ts";
 import { generateText as aiGenerateText } from "ai";
 import { Buffer } from "buffer";
 import { createOllama } from "ollama-ai-provider";
@@ -17,6 +17,7 @@ import {
     parseJsonArrayFromText,
     parseJSONObjectFromText,
     parseShouldRespondFromText,
+    parseActionResponseFromText,
 } from "./parsing.ts";
 import settings from "./settings.ts";
 import {
@@ -28,6 +29,7 @@ import {
 } from "./types.ts";
 
 import { defaultCharacter } from "./defaultCharacter.ts";
+import { parse } from "path";
 
 /**
  * Send a message to the model for a text generateText - receive a string back and parse how you'd like
@@ -412,6 +414,62 @@ export async function generateShouldRespond({
         retryDelay *= 2;
     }
 }
+
+export async function generateTweetActions({
+    runtime,
+    context,
+    modelClass,
+    modelOverride,
+}: {
+    runtime: IAgentRuntime;
+    context: string;
+    modelClass: string;
+    modelOverride?: string;
+}): Promise<ActionResponse | null> {
+    let retryDelay = 1000;
+    
+    while (true) {
+        try {
+            console.debug(
+                "Attempting to generate text with context for tweet actions:",
+                context
+            );
+            
+            const response = await generateText({
+                runtime,
+                context,
+                modelClass,
+                modelOverride,
+            });
+            
+            console.debug("Received response from generateText for tweet actions:", response);
+            const { actions } = parseActionResponseFromText(response.trim());
+            
+            if (actions) {
+                console.debug("Parsed tweet actions:", actions);
+                return actions;
+            } else {
+                elizaLogger.debug("generateTweetActions no valid response");
+            }
+        } catch (error) {
+            elizaLogger.error("Error in generateTweetActions:", error);
+            if (
+                error instanceof TypeError &&
+                error.message.includes("queueTextCompletion")
+            ) {
+                elizaLogger.error(
+                    "TypeError: Cannot read properties of null (reading 'queueTextCompletion')"
+                );
+            }
+        }
+
+        elizaLogger.log(`Retrying in ${retryDelay}ms...`);
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+        retryDelay *= 2;
+    }
+}
+
+
 
 /**
  * Splits content into chunks of specified size with optional overlapping bleed sections

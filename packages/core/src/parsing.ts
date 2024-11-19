@@ -1,3 +1,5 @@
+import { ActionResponse } from "./types.ts";
+
 const jsonBlockPattern = /```json\n([\s\S]*?)\n```/;
 
 export const messageCompletionFooter = `\nResponse format should be formatted in a JSON block like this:
@@ -24,6 +26,51 @@ export const parseShouldRespondFromText = (
         ? (match[0].toUpperCase() as "RESPOND" | "IGNORE" | "STOP")
         : text.includes("RESPOND") ? "RESPOND" : text.includes("IGNORE") ? "IGNORE" : text.includes("STOP") ? "STOP" : null;
 };
+
+export const postActionResponseFooter = `Choose any combination of [LIKE], [RETWEET], [QUOTE], [REPLY], and [MEME] that are appropriate. Each action must be on its own line. For MEME include the text/concept after a colon. Your response must only include the chosen actions.`;
+
+
+export const parseActionResponseFromText = (text: string): { actions: ActionResponse } => {
+    const actions: ActionResponse = {
+        like: false,
+        retweet: false,
+        quote: false,
+        reply: false
+    };
+    
+    // Regex patterns
+    const likePattern = /\[LIKE\]/i;
+    const retweetPattern = /\[RETWEET\]/i;
+    const quotePattern = /\[QUOTE\]/i;
+    const replyPattern = /\[REPLY\]/i;
+    const memePattern = /\[MEME:(.*?)\]/i;
+    
+    // Check with regex
+    actions.like = likePattern.test(text);
+    actions.retweet = retweetPattern.test(text);
+    actions.quote = quotePattern.test(text);
+    actions.reply = replyPattern.test(text);
+    
+    // Extract meme content if exists
+    const memeMatch = text.match(memePattern);
+    if (memeMatch && memeMatch[1]) {
+        actions.meme = memeMatch[1].trim();
+    }
+    
+    // Also do line by line parsing as backup
+    const lines = text.split('\n');
+    for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed === '[LIKE]') actions.like = true;
+        if (trimmed === '[RETWEET]') actions.retweet = true;
+        if (trimmed === '[QUOTE]') actions.quote = true;
+        if (trimmed === '[REPLY]') actions.reply = true;
+        if (trimmed.startsWith('[MEME:')) actions.meme = trimmed.slice(6, -1).trim();
+    }
+    
+    return { actions };
+};
+
 
 export const booleanFooter = `Respond with a YES or a NO.`;
 

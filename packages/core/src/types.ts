@@ -160,6 +160,7 @@ export interface State {
     recentInteractionsData?: Memory[]; // An optional array of memory objects representing recent interactions in the conversation.
     recentInteractions?: string; // An optional string representation of recent interactions in the conversation.
     formattedConversation?: string; // An optional string representation of the formatted Twitter thread conversation.
+    // advancedPostText?: string; // An optional string representation of the tweet text for advanced post generation.
     [key: string]: unknown; // Allows for additional properties to be included dynamically.
 }
 
@@ -653,4 +654,24 @@ export enum ServiceType {
     BROWSER = "browser",
     SPEECH_GENERATION = "speech_generation",
     PDF = "pdf",
+}
+
+export interface TweetAction {
+    like: boolean;
+    retweet: boolean;
+    quote?: boolean;
+    reply?: boolean;
+    meme?: string;
+}
+
+export interface TweetResponse {
+    actions: TweetAction;
+}
+
+export interface ActionResponse {
+    like: boolean;
+    retweet: boolean;
+    quote?: boolean;
+    reply?: boolean;
+    meme?: string;
 }

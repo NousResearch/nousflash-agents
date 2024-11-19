@@ -12,7 +12,7 @@ import {
     Scraper,
     SearchMode,
     Tweet,
-} from "agent-twitter-client";
+} from "goat-x";
 import { EventEmitter } from "events";
 import fs from "fs";
 import path from "path";

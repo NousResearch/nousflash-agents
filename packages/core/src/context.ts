@@ -28,6 +28,14 @@ export const composeContext = ({
     state: State;
     template: string;
 }) => {
+
+    // Log the template and state for inspection
+    // console.log('Template:', template);
+    // console.log('State:', state);
+
+    // Find all template variables
+    const templateVars = template.match(/{{\w+}}/g) || [];
+    console.log('Template variables found:', templateVars);
     // @ts-expect-error match isn't working as expected
     const out = template.replace(/{{\w+}}/g, (match) => {
         const key = match.replace(/{{|}}/g, "");

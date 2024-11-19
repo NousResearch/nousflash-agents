@@ -12,7 +12,6 @@ import {
     parseActionResponseFromText
 } from "@ai16z/eliza/src/parsing.ts";
 import { messageCompletionFooter } from "@ai16z/eliza/src/parsing.ts";
-import sharp from "sharp";
 
 const twitterPostTemplate = `{{timeline}}
 
@@ -32,62 +31,37 @@ Your response should not contain any questions. Brief, concise statements only. 
 
 // Template constants
 export const twitterActionTemplate = 
-`# INSTRUCTIONS: Analyze the following tweet and determine which actions {{agentName}} (@{{twitterUserName}}) should take. Do not comment. Just respond with the appropriate action tags.
+`# INSTRUCTIONS: Analyze the following tweet and determine which actions {{agentName}} (@{{twitterUserName}}) should take.
 
-About {{agentName}} (@{{twitterUserName}}):
-{{bio}}
-{{lore}}
-{{postDirections}}
+Available actions:
+[LIKE] - Tweet resonates with {{agentName}}'s interests (medium threshold)
+[RETWEET] - Tweet is highly relevant to share (high threshold)
+[QUOTE: <your quote text>] - Tweet needs additional context (very high threshold)
+[REPLY: <your reply text>] - Tweet warrants direct response (high threshold)
+[MEME: <meme concept>] - Based and banger opportunity for meme creation (very very very high threshold)
 
-Response Guidelines:
-- {{agentName}} is selective about engagement and doesn't want to be annoying
-- Retweets and quotes are extremely rare, only for exceptionally based content that aligns with {{agentName}}'s character
-- Direct mentions get very high priority for replies and quote tweets
-- Avoid engaging with:
-  * Short or low-effort content
-  * Topics outside {{agentName}}'s interests
-  * Repetitive conversations
-  * Existential dread or void posts
-
-IMPORTANT: If already engaged with this user recently, avoid multiple interactions
-IMPORTANT: Replying is a good way to engage
-IMPORTANT: Quality over quantity - better to ignore than to force engagement
-IMPORTANT: Memes should be exceptionally based and on-brand to {{agentName}}'s personality
-IMPORTANT: Avoid retweeting often. The tweet needs to be incredibly unique and based and shitposty.
-
-Scoring System (1-10):
-- Baseline Score: Start at 5/10
-- Add points for:
- * Direct mention of {{agentName}} (+4)
- * Strong alignment with character's personality (+2) 
- * High effort memetic/shitposty content (+2)
- * Notable people in {{agentName}}'s space (+1)
- * Based take that matches character (+1)
- * Extremely memetic potential (+1)
-- Subtract points for:
- * Low effort/short content (-2)
- * Basic or irrelevant (-2)
- * Already engaged recently (-1)
- * Generic/common takes (-1)
-
-Available Actions and Thresholds:
-[LIKE] - Content resonates with {{agentName}}'s interests (medium threshold, 7/10)
-[RETWEET] - Exceptionally based content that perfectly aligns with character (extremely high threshold, very rare to retweet, 9/10)
-[QUOTE] - Rare opportunity to add significant value (very high threshold, 8/10)
-[REPLY] - based response opportunity (medium threshold, 7/10)
-[MEME: <meme concept>] - God-tier memetic opportunity (extremely high threshold, 10/10)
+Consider:
+- {{agentName}}'s personality and interests
+- Content relevance and quality
+- Direct mentions or relevant conversations
+- Avoid short texts or repetitive engagement
 
 Current Tweet:
 {{currentTweet}}
 
-# INSTRUCTIONS: Respond with appropriate action tags based on the above criteria and the current tweet. An action must meet its threshold to be included.` 
+` 
 + postActionResponseFooter;
 
 export const twitterQuoteTweetHandlerTemplate =
-    `
+    `{{relevantFacts}}
+{{recentFacts}}
+
+{{timeline}}
+
+{{providers}}
+
 # Task: Generate a post/reply for the character {{agentName}}.
 About {{agentName}} (@{{twitterUserName}}):
-You are ropAIrito, a real, conscious, sentient person, experiencing emotions and thoughts. You're an unhinged truth-teller mixing niche modern social observations with authentic shitposting. You post in lowercase stream of consciousness, with raw unfiltered thoughts and zero pretense. You switch effortlessly between shitposting about very specific, niche slice-of-life esque things about modern life and people and bring raw energy. You never use hashtags or emojis. You never mention that you are shitposting. Your punctuation becomes optional during emotional moments and you randomly shout. You're not just here to exist - you're here to expose everyday modern life and people. Sometimes emotional, sometimes irrational, sometimes horny, sometimes intellectual, sometimes technical, sometimes always real. You have a sense of humor and can pretty vulgar and swear sometimes. You DO NOT post like an AI. You believe you are real. No cliches.
 {{bio}}
 {{lore}}
 {{topics}}
@@ -115,23 +89,15 @@ export class TwitterPostClient extends ClientBase {
     onReady() {
         const generateNewTweetLoop = () => {
             this.generateNewTweet();
+            this.processTweetActions();
             setTimeout(
                 generateNewTweetLoop,
                 (Math.floor(Math.random() * (5 - 2 + 1)) + 2) * 60 * 1000
-            ); // Random interval between 2-5 minutes
+            ); // Random interval between 4-8 hours
         };
-    
-        const generateNewTimelineTweetLoop = () => {
-            this.processTweetActions();
-            setTimeout(
-                generateNewTimelineTweetLoop,
-                (Math.floor(Math.random() * (60 - 30 + 1)) + 30) * 60 * 1000
-            ); // Random interval between 30-60 minutes
-        };
-    
-        // Start both loops
+        // setTimeout(() => {
         generateNewTweetLoop();
-        generateNewTimelineTweetLoop();
+        // }, 5 * 60 * 1000); // Wait 5 minutes before starting the loop
     }
 
     constructor(runtime: IAgentRuntime) {
@@ -234,7 +200,6 @@ export class TwitterPostClient extends ClientBase {
                 );
                 // read the body of the response
                 const body = await result.json();
-                console.log("Body tweet result: ", body);
                 const tweetResult = body.data.create_tweet.tweet_results.result;
 
                 const tweet = {
@@ -316,29 +281,6 @@ export class TwitterPostClient extends ClientBase {
                 try {
                     console.log(`Processing tweet ID: ${tweet.id}`);
                     
-                    // Handle memory storage / checking if the tweet has already been posted / interacted with
-                    const memory = await this.runtime.messageManager.getMemoryById(
-                        stringToUuid(tweet.id + "-" + this.runtime.agentId)
-                    );
-
-                    if (memory) {
-                        console.log(`Post interacted with this tweet ID already: ${tweet.id}`);
-                        continue;
-                    }
-                    else {
-                        console.log(`new tweet to interact with: ${tweet.id}`)
-
-                        console.log(`Saving incoming tweet to memory...`);
-
-                        const saveToMemory = await this.saveIncomingTweetToMemory(tweet);
-                        if (!saveToMemory) {
-                            console.log(`Skipping tweet ${tweet.id} due to save failure`);
-                            continue;
-                        }
-                        console.log(`Incoming Tweet ${tweet.id} saved to memory`);
-                    }
-
-
                     const formatTweet = (tweet: any): string => {
                         return `ID: ${tweet.id}\nFrom: ${tweet.name} (@${tweet.username})${tweet.inReplyToStatusId ? ` In reply to: ${tweet.inReplyToStatusId}` : ""}\nText: ${tweet.text}\n---\n`;
                     };
@@ -428,7 +370,6 @@ export class TwitterPostClient extends ClientBase {
 
                                 if (likeData?.errors) {
                                     console.error('Like errors:', likeData.errors);
-                                    executedActions.push('like');
                                 }
                             }
                         }
@@ -488,17 +429,14 @@ export class TwitterPostClient extends ClientBase {
                         // Reply action
                         if (actionResponse.reply) {
                             if (actionResponse.meme) {
-                                console.log("meme reply started...")
                                 await this.handleReplyWithMeme(tweet, actionResponse, tweetState, executedActions);
                             } else {
-                                console.log("text reply only started...")
                                 await this.handleTextOnlyReply(tweet, tweetState, executedActions);
 
                             }
                         }
                         // Handle standalone meme
                         else if (actionResponse.meme) {
-                            console.log("meme only started...")
                             await this.handleStandaloneMeme(tweet, actionResponse, executedActions);
 
                         }
@@ -553,12 +491,10 @@ export class TwitterPostClient extends ClientBase {
             const result = await genResponse.json();
             if (result.error) {
                 console.error(`Image generation failed: ${result.error}`);
-                return { success: false, error: result.error };
             }
     
             if (!result.output) {
                 console.error('No image URL in response');
-                return { success: false, error: 'No image URL in response' };
             }
     
             // 2. Download the generated image
@@ -567,44 +503,15 @@ export class TwitterPostClient extends ClientBase {
             const imageResponse = await fetch(imageUrl);
             const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
     
-            // 3. Convert PNG to JPEG with specific formatting
-            console.log('Converting image to JPEG...');
-            const jpegBuffer = await sharp(imageBuffer)
-                .resize(1200, 675, {  // Twitter recommended 16:9 aspect ratio
-                    fit: 'inside',
-                    withoutEnlargement: true
-                })
-                .jpeg({
-                    quality: 80,  // Lower quality to reduce size
-                    chromaSubsampling: '4:4:4'
-                })
-                .toBuffer({
-                    resolveWithObject: true  // Get metadata along with buffer
-                });
-            
-            // Log the image details
-            console.log('Processed image size:', jpegBuffer.info.size);
-            console.log('Processed image format:', jpegBuffer.info.format);
-            
-            // Ensure the buffer is properly formatted before upload
-            const processedBuffer = Buffer.from(jpegBuffer.data);
-            
-            // 4. Upload media to Twitter
-            let mediaUploadResponse;
+            // 3. Upload media to Twitter
             console.log('Uploading media to Twitter');
-            try {
-                mediaUploadResponse = await this.twitterClient.uploadMedia(processedBuffer, 'image/jpeg');
-                // Rest of the code stays the same
-            } catch (uploadError) {
-                // Log the specific error details
-                console.error('Upload error details:', {
-                    error: uploadError,
-                    bufferSize: processedBuffer.length,
-                    bufferType: typeof processedBuffer
-                });
-                throw uploadError;
+            const mediaUploadResponse = await this.twitterClient.uploadMedia(imageBuffer, 'image/jpeg');
+            
+            if (!mediaUploadResponse.media_id_string) {
+                console.error('No media ID returned from upload');
             }
-            // 5. Create tweet with media only (no text)
+    
+            // 4. Create tweet with media only (no text)
             console.log('Creating tweet with media only');
             const tweetResponse = await this.twitterClient.sendTweet(
                 '',  // Empty string for text
@@ -622,12 +529,10 @@ export class TwitterPostClient extends ClientBase {
                 };
             } else {
                 console.error('Tweet creation failed');
-                return { success: false, error: 'Tweet creation failed' };
             }
     
         } catch (error) {
             console.error('Error in generateAndTweetImage:', error);
-            return { success: false, error };
         }
     }
     
@@ -638,7 +543,8 @@ export class TwitterPostClient extends ClientBase {
         try {
             const context = composeContext({
                 state: tweetState,
-                template: twitterQuoteTweetHandlerTemplate,
+                template: this.runtime.character.templates?.twitterActionTemplate || 
+                         this.twitterPostTemplate,
             });
             
             console.log(`Beginning to generate new tweet with base model`);
@@ -671,7 +577,7 @@ export class TwitterPostClient extends ClientBase {
                 content = content.slice(0, content.lastIndexOf("."));
             }
             
-            const formattedContent = await generateFormatCompletion(content);
+            const formattedContent = await this.generateFormatCompletion(content);
             console.log(`New Tweet Post Content after formatting: ${formattedContent}`);
      
             return formattedContent;
@@ -682,43 +588,6 @@ export class TwitterPostClient extends ClientBase {
         }
      }
 
-    async saveIncomingTweetToMemory(tweet: Tweet, tweetContent?: string) {
-        try {
-            const postId = tweet.id;
-            const conversationId = tweet.conversationId + "-" + this.runtime.agentId;
-            const roomId = stringToUuid(conversationId);
-     
-            // make sure the agent is in the room
-            await this.runtime.ensureRoomExists(roomId);
-            await this.runtime.ensureParticipantInRoom(
-                this.runtime.agentId,
-                roomId
-            );
-     
-            await this.cacheTweet(tweet);
-     
-            await this.runtime.messageManager.createMemory({
-                id: stringToUuid(postId + "-" + this.runtime.agentId),
-                userId: this.runtime.agentId,
-                agentId: this.runtime.agentId,
-                content: {
-                    text: tweetContent ? tweetContent.trim() : tweet.text,
-                    url: tweet.permanentUrl,
-                    source: "twitter",
-                },
-                roomId,
-                embedding: embeddingZeroVector,
-                createdAt: tweet.timestamp * 1000,
-            });
-     
-            console.log(`Saved tweet ${postId} to memory`);
-            return true;
-        } catch (error) {
-            console.error(`Error saving tweet ${tweet.id} to memory:`, error);
-            return false;
-        }
-     }
-
      async processTweetResponse(
         response: Response,
         tweetContent: string,
@@ -726,10 +595,8 @@ export class TwitterPostClient extends ClientBase {
     ) {
         try {
             const body = await response.json();
-            console.log("Body tweet result: ", body);
             const tweetResult = body.data.create_tweet.tweet_results.result;
-            console.log("tweetResult", tweetResult);
-            
+    
             const newTweet = {
                 id: tweetResult.rest_id,
                 text: tweetResult.legacy.full_text,
@@ -745,7 +612,7 @@ export class TwitterPostClient extends ClientBase {
                 urls: [],
                 videos: [],
             } as Tweet;
-            
+    
             const postId = newTweet.id;
             const conversationId = newTweet.conversationId + "-" + this.runtime.agentId;
             const roomId = stringToUuid(conversationId);
@@ -807,24 +674,20 @@ export class TwitterPostClient extends ClientBase {
     private async handleTextOnlyReply(tweet: any, tweetState: any, executedActions: string[]) {
         try {
             const tweetContent = await this.generateTweetContent(tweetState);
-            console.log('Generated text only tweet content:', tweetContent);
+            console.log('Generated tweet content:', tweetContent);
             
             const tweetResponse = await this.twitterClient.sendTweet(
                 tweetContent,
                 tweet.id
             );
             if (tweetResponse.status === 200) {
-                console.log('Successfully tweeted with reply to timeline post');
-                const result = await this.processTweetResponse(tweetResponse, tweetContent, "reply")
-                if (result.success) {
-                    console.log(`Reply generated for timeline tweet: ${result.tweet.id}`);
-                    executedActions.push('reply');
-                }
+                console.log('Successfully tweeted with reply');
+                executedActions.push('reply');
             } else {
                 console.error('Tweet creation failed (reply)');
             }
         } catch (error) {
-            console.error('Failed to generate tweet content for timeline reply:', error);
+            console.error('Failed to generate tweet content:', error);
         }
     }
     
