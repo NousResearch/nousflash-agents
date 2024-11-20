@@ -114,7 +114,7 @@ export class TwitterPostClient extends ClientBase {
     onReady() {
 
         const tweetWallet = async () => {
-            const wallet_string = `My wallet is: ${settings.WALLET_PUBLIC_KEY}`
+            const wallet_string = `My wallet is: ${this.runtime.getSetting("WALLET_PUBLIC_KEY")}`;
             const tweetResponse = await this.twitterClient.sendTweet(
                 wallet_string,
             );
