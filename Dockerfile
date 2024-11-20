@@ -13,6 +13,10 @@ ADD tsconfig.json /app/tsconfig.json
 ADD pnpm-lock.yaml /app/pnpm-lock.yaml
 RUN pnpm i
 
+# Add the documentation
+# ADD docs /app/docs
+# RUN pnpm i
+
 # Add the rest of the application code
 ADD packages /app/packages
 RUN pnpm i
@@ -20,7 +24,13 @@ RUN pnpm i
 # Add the environment variables
 ADD scripts /app/scripts
 ADD characters /app/characters
-ADD .env /app/.env
 
-# Command to run the container
-CMD ["tail", "-f", "/dev/null"]
+# Build the application
+RUN pnpm build
+
+# Expose the port
+EXPOSE 3000
+
+# Start command
+CMD ["pnpm", "dev"] 
+# "--character=characters/dv.character.json"

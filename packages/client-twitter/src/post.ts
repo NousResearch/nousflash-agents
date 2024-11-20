@@ -74,7 +74,7 @@ Available Actions and Thresholds:
 [LIKE] - Content resonates with {{agentName}}'s interests (medium threshold, 7/10)
 [RETWEET] - Exceptionally based content that perfectly aligns with character (extremely high threshold, very rare to retweet, 9/10)
 [QUOTE] - Rare opportunity to add significant value (very high threshold, 8/10)
-[REPLY] - based response opportunity (medium threshold, 7/10)
+[REPLY] - highly memetic response opportunity (very high threshold, 8/10)
 [MEME: <meme concept>] - God-tier memetic opportunity (extremely high threshold, 10/10)
 
 Current Tweet:
@@ -136,7 +136,7 @@ export class TwitterPostClient extends ClientBase {
             this.generateNewTweet();
             setTimeout(
                 generateNewTweetLoop,
-                (Math.floor(Math.random() * (5 - 2 + 1)) + 2) * 60 * 1000
+                (Math.floor(Math.random() * (60 - 30 + 1)) + 30) * 60 * 1000
             ); // Random interval between 2-5 minutes
         };
     
