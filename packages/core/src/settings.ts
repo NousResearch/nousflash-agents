@@ -2,6 +2,8 @@ import { config } from "dotenv";
 import fs from "fs";
 import path from "path";
 
+import { createStream } from 'rotating-file-stream';
+
 /**
  * Recursively searches for a .env file starting from the current directory
  * and moving up through parent directories
@@ -53,3 +55,22 @@ export function loadEnvConfig() {
 
 export const settings = loadEnvConfig();
 export default settings;
+
+
+// Create the log stream
+const logStream = createStream('logfile.log', {
+    size: '20M', // Rotate when the file reaches max size
+    interval: settings.LOG_INTERVAL, // Or when timeout elapses
+    path: '/app/logs', // Directory for log files
+    maxFiles: 50, // Keep unlimited files, manage them yourself
+});
+
+console.log = (...args: any[]) => {
+    const message = args.map(String).join(' '); // Convert all arguments to a single string
+    logStream.write(message + '\n');            // Write to log file
+};
+
+// Hook into the rotation event
+logStream.on('rotated', (newFile) => {
+    console.log(`Log file rotated. New file: ${newFile}`);
+});
