@@ -337,9 +337,6 @@ importers:
       anthropic-vertex-ai:
         specifier: ^1.0.0
         version: 1.0.2(encoding@0.1.13)(zod@3.23.8)
-      fastembed:
-        specifier: ^1.14.1
-        version: 1.14.1
       gaxios:
         specifier: 6.7.1
         version: 6.7.1(encoding@0.1.13)
@@ -801,27 +798,6 @@ packages:
 
   '@anthropic-ai/sdk@0.30.1':
     resolution: {integrity: sha512-nuKvp7wOIz6BFei8WrTdhmSsx5mwnArYyJgh4+vYu3V4J0Ltb8Xm3odPm51n1aSI0XxNCrDl7O88cxCtUdAkaw==}
-
-  '@anush008/tokenizers-darwin-universal@0.0.0':
-    resolution: {integrity: sha512-SACpWEooTjFX89dFKRVUhivMxxcZRtA3nJGVepdLyrwTkQ1TZQ8581B5JoXp0TcTMHfgnDaagifvVoBiFEdNCQ==}
-    engines: {node: '>= 10'}
-    os: [darwin]
-
-  '@anush008/tokenizers-linux-x64-gnu@0.0.0':
-    resolution: {integrity: sha512-TLjByOPWUEq51L3EJkS+slyH57HKJ7lAz/aBtEt7TIPq4QsE2owOPGovByOLIq1x5Wgh9b+a4q2JasrEFSDDhg==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [linux]
-
-  '@anush008/tokenizers-win32-x64-msvc@0.0.0':
-    resolution: {integrity: sha512-/5kP0G96+Cr6947F0ZetXnmL31YCaN15dbNbh2NHg7TXXRwfqk95+JtPP5Q7v4jbR2xxAmuseBqB4H/V7zKWuw==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [win32]
-
-  '@anush008/tokenizers@0.0.0':
-    resolution: {integrity: sha512-IQD9wkVReKAhsEAbDjh/0KrBGTEXelqZLpOBRDaIRvlzZ9sjmUP+gKbpvzyJnei2JHQiE8JAgj7YcNloINbGBw==}
-    engines: {node: '>= 10'}
 
   '@babel/code-frame@7.26.2':
     resolution: {integrity: sha512-RJlIHRueQgwWitWgF8OdFYGZX328Ax5BCemNGlqHfplnRT9ESi8JkFlvaVYbS+UubVY6dpv87Fs2u5M29iNFVQ==}
@@ -3815,9 +3791,6 @@ packages:
   fast-stable-stringify@1.0.0:
     resolution: {integrity: sha512-wpYMUmFu5f00Sm0cj2pfivpmawLZ0NKdviQ4w9zJeR8JVtOpOxHmLaJuj0vxvGqMJQWyP/COUkF75/57OKyRag==}
 
-  fastembed@1.14.1:
-    resolution: {integrity: sha512-Y14v+FWZwjNUpQ7mRGYu4N5yF+hZkF7zqzPWzzLbwdIEtYsHy0DSpiVJ+Fg6Oi1fQjrBKASQt0hdSMSjw1/Wtw==}
-
   fastestsmallesttextencoderdecoder@1.0.22:
     resolution: {integrity: sha512-Pb8d48e+oIuY4MaM64Cd7OW1gt4nxCHs7/ddPPZ/Ic3sg8yVGM7O9wDvZ7us6ScaUupzM+pfBolwtYhN1IxBIw==}
 
@@ -5502,13 +5475,6 @@ packages:
   only-allow@1.2.1:
     resolution: {integrity: sha512-M7CJbmv7UCopc0neRKdzfoGWaVZC+xC1925GitKH9EAqYFzX9//25Q7oX4+jw0tiCCj+t5l6VZh8UPH23NZkMA==}
     hasBin: true
-
-  onnxruntime-common@1.15.1:
-    resolution: {integrity: sha512-Y89eJ8QmaRsPZPWLaX7mfqhj63ny47rSkQe80hIo+lvBQdrdXYR9VO362xvZulk9DFkCnXmGidprvgJ07bKsIQ==}
-
-  onnxruntime-node@1.15.1:
-    resolution: {integrity: sha512-wzhVELulmrvNoMZw0/HfV+9iwgHX+kPS82nxodZ37WCXmbeo1jp3thamTsNg8MGhxvv4GmEzRum5mo40oqIsqw==}
-    os: [win32, darwin, linux]
 
   open@8.4.2:
     resolution: {integrity: sha512-7x81NCL719oNbsq/3mh+hVrAWmFuEYUqrq/Iw3kUzH8ReypT9QQ0BLoJS7/G9k6N81XjW4qHWtjWwe/9eLy1EQ==}
@@ -7519,21 +7485,6 @@ snapshots:
       node-fetch: 2.7.0(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
-
-  '@anush008/tokenizers-darwin-universal@0.0.0':
-    optional: true
-
-  '@anush008/tokenizers-linux-x64-gnu@0.0.0':
-    optional: true
-
-  '@anush008/tokenizers-win32-x64-msvc@0.0.0':
-    optional: true
-
-  '@anush008/tokenizers@0.0.0':
-    optionalDependencies:
-      '@anush008/tokenizers-darwin-universal': 0.0.0
-      '@anush008/tokenizers-linux-x64-gnu': 0.0.0
-      '@anush008/tokenizers-win32-x64-msvc': 0.0.0
 
   '@babel/code-frame@7.26.2':
     dependencies:
@@ -11082,13 +11033,6 @@ snapshots:
 
   fast-stable-stringify@1.0.0: {}
 
-  fastembed@1.14.1:
-    dependencies:
-      '@anush008/tokenizers': 0.0.0
-      onnxruntime-node: 1.15.1
-      progress: 2.0.3
-      tar: 6.2.1
-
   fastestsmallesttextencoderdecoder@1.0.22: {}
 
   fastq@1.17.1:
@@ -13189,12 +13133,6 @@ snapshots:
   only-allow@1.2.1:
     dependencies:
       which-pm-runs: 1.1.0
-
-  onnxruntime-common@1.15.1: {}
-
-  onnxruntime-node@1.15.1:
-    dependencies:
-      onnxruntime-common: 1.15.1
 
   open@8.4.2:
     dependencies:

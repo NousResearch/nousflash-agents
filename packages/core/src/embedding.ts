@@ -1,4 +1,3 @@
-import { EmbeddingModel, FlagEmbedding } from "fastembed";
 import path from "path";
 import { fileURLToPath } from "url";
 import models from "./models.ts";
@@ -101,14 +100,6 @@ export async function embed(runtime: IAgentRuntime, input: string) {
     console.log("embeddingModel", embeddingModel);
 
 
-    // Try local embedding first
-    if (
-        runtime.character.modelProvider !== ModelProviderName.OPENAI &&
-        !settings.USE_OPENAI_EMBEDDING
-    ) {
-        return await getLocalEmbedding(input);
-    }
-
     // Check cache
     const cachedEmbedding = await retrieveCachedEmbedding(runtime, input);
     if (cachedEmbedding) {
@@ -126,23 +117,6 @@ export async function embed(runtime: IAgentRuntime, input: string) {
             runtime.token,            // Use runtime token for other providers
         // isOllama: runtime.character.modelProvider === ModelProviderName.OLLAMA && !settings.USE_OPENAI_EMBEDDING
     });
-}
-
-
-async function getLocalEmbedding(input: string): Promise<number[]> {
-    const cacheDir = getRootPath() + "/cache/";
-    if (!fs.existsSync(cacheDir)) {
-        fs.mkdirSync(cacheDir, { recursive: true });
-    }
-
-    const embeddingModel = await FlagEmbedding.init({
-        cacheDir: cacheDir
-    });
-
-    const trimmedInput = trimTokens(input, 8000, "gpt-4o-mini");
-    const embedding = await embeddingModel.queryEmbed(trimmedInput);
-    //console.log("Embedding dimensions: ", embedding.length);
-    return embedding;
 }
 
 export async function retrieveCachedEmbedding(
