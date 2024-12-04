@@ -1,7 +1,6 @@
 import { Plugin } from "@ai16z/eliza/src/types.ts";
 import { BrowserService } from "./services/browser.ts";
 import { ImageDescriptionService } from "./services/image.ts";
-import { LlamaService } from "./services/llama.ts";
 import { PdfService } from "./services/pdf.ts";
 import { SpeechService } from "./services/speech.ts";
 import { TranscriptionService } from "./services/transcription.ts";
@@ -13,7 +12,6 @@ export const nodePlugin: Plugin = {
     services: [
         BrowserService,
         ImageDescriptionService,
-        LlamaService,
         PdfService,
         SpeechService,
         TranscriptionService,

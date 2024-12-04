@@ -208,7 +208,7 @@ export class ClientBase extends EventEmitter {
                 );
                 await this.setCookiesFromArray(cookiesArray);
             } else {
-                console.log("Cookies file path:", cookiesFilePath);
+                console.log("REDACT: Cookies file path:", cookiesFilePath);
                 if (fs.existsSync(cookiesFilePath)) {
                     const cookiesArray = JSON.parse(
                         fs.readFileSync(cookiesFilePath, "utf-8")
@@ -269,7 +269,7 @@ export class ClientBase extends EventEmitter {
                 console.error("Failed to get user ID");
                 return;
             }
-            console.log("Twitter user ID:", userId);
+            console.log("REDACT: Twitter user ID:", userId);
             this.twitterUserId = userId;
 
             await this.populateTimeline();

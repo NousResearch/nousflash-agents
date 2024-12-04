@@ -28,14 +28,14 @@ interface EmbeddingOptions {
     endpoint: string;
     apiKey?: string;
     length?: number;
-    isOllama?: boolean;
+
 }
 
 async function getRemoteEmbedding(input: string, options: EmbeddingOptions): Promise<number[]> {
     // Ensure endpoint ends with /v1 for OpenAI
     const baseEndpoint = options.endpoint.endsWith('/v1') ?
         options.endpoint :
-        `${options.endpoint}${options.isOllama ? '/v1' : ''}`;
+        `${options.endpoint}${''}`;
 
     // Construct full URL
     const fullUrl = `${baseEndpoint}/embeddings`;
@@ -104,7 +104,6 @@ export async function embed(runtime: IAgentRuntime, input: string) {
     // Try local embedding first
     if (
         runtime.character.modelProvider !== ModelProviderName.OPENAI &&
-        runtime.character.modelProvider !== ModelProviderName.OLLAMA &&
         !settings.USE_OPENAI_EMBEDDING
     ) {
         return await getLocalEmbedding(input);
@@ -125,7 +124,7 @@ export async function embed(runtime: IAgentRuntime, input: string) {
         apiKey: settings.USE_OPENAI_EMBEDDING ?
             settings.OPENAI_API_KEY : // Use OpenAI key from settings when USE_OPENAI_EMBEDDING is true
             runtime.token,            // Use runtime token for other providers
-        isOllama: runtime.character.modelProvider === ModelProviderName.OLLAMA && !settings.USE_OPENAI_EMBEDDING
+        // isOllama: runtime.character.modelProvider === ModelProviderName.OLLAMA && !settings.USE_OPENAI_EMBEDDING
     });
 }
 

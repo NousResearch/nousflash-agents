@@ -7,10 +7,7 @@ import {
     generateShouldRespond,
     generateFormatCompletion
 } from "@ai16z/eliza/src/generation.ts";
-import {
-    messageCompletionFooter,
-    shouldRespondFooter,
-} from "@ai16z/eliza/src/parsing.ts";
+
 import {
     Content,
     HandlerCallback,
@@ -23,69 +20,7 @@ import { stringToUuid } from "@ai16z/eliza/src/uuid.ts";
 import { ClientBase } from "./base.ts";
 import { buildConversationThread, sendTweet, wait } from "./utils.ts";
 import { defaultCharacter } from "@ai16z/eliza/src/defaultCharacter.ts";
-
-export const twitterMessageHandlerTemplate =
-    `{{relevantFacts}}
-{{recentFacts}}
-
-{{timeline}}
-
-{{providers}}
-
-# Task: Generate a post for the character {{agentName}}.
-About {{agentName}} (@{{twitterUserName}}):
-{{bio}}
-{{lore}}
-{{topics}}
-
-{{characterPostExamples}}
-
-{{postDirections}}
-
-Topics to Ignore / Not Discuss:
-existential dread
-void
-random memecoin tickers
-
-# Task: Generate a post/reply in the voice, style and perspective of {{agentName}} (@{{twitterUserName}}) while using the thread of tweets as additional context:
-Current Post:
-{{currentPost}}
-Thread of Tweets You Are Replying To:
-
-{{formattedConversation}}
-
-` + messageCompletionFooter;
-
-export const twitterShouldRespondTemplate =
-    `# INSTRUCTIONS: Determine if {{agentName}} (@{{twitterUserName}}) should respond to the message and participate in the conversation. Do not comment. Just respond with "RESPOND", "IGNORE" or "STOP".
-
-Response options are RESPOND, IGNORE and STOP.
-
-{{agentName}} should respond to messages that are directed at them, or participate in conversations that are interesting or relevant, IGNORE messages that are irrelevant to them, and should STOP if the conversation is concluded.
-{{agentName}} primarily responds to messages that are based or meet the message rating specified below. 
-It is medium difficulty (message rating of 7 out of 10 or higher) to get a response from {{agentName}}.
-
-{{agentName}} is in a room with other users and wants to be conversational, but not annoying.
-{{agentName}} should RESPOND to messages that are directed at them, or participate in conversations that are actually interesting or relevant to their background.
-{{agentName}} should RESPOND to questions that are directed at them.
-If a message seems to be about existential dread or the void, should STOP.
-Unless directly RESPONDing to a user, {{agentName}} should IGNORE messages that are very short or do not contain much information.
-If a user asks {{agentName}} to stop talking, {{agentName}} should STOP.
-If {{agentName}} concludes a conversation and isn't part of the conversation anymore, {{agentName}} should STOP.
-
-IMPORTANT: If the thread has been going on for more than 5 messages and/or a long time (based on the thread of tweets), STOP, especially if its the same topics being discussed.
-IMPORTANT: {{agentName}} is very sensitive to being annoying, so respond with STOP if the same few people are being responded to in a thread. 
-
-
-Current Post:
-{{currentPost}}
-
-Thread of Tweets You Are Replying To:
-
-{{formattedConversation}}
-
-# INSTRUCTIONS: Respond with [RESPOND] if {{agentName}} should respond, or [IGNORE] if {{agentName}} should not respond to the last message and [STOP] if {{agentName}} should stop participating in the conversation.
-` + shouldRespondFooter;
+import { twitterMessageHandlerTemplate, twitterShouldRespondTemplate } from "@ai16z/eliza/src/prompts.ts"
 
 // export const formatResponseTemplate = `
 // TACTICAL BRIEFING: Deploy maximum intelligent based zoomer posting as {{agentName}}
@@ -235,7 +170,7 @@ export class TwitterInteractionClient extends ClientBase {
         thread: Tweet[];
     }) {
         if (tweet.username === this.runtime.getSetting("TWITTER_USERNAME")) {
-            console.log("skipping tweet from bot itself", tweet.id);
+            console.log("skipping tweet from agent itself", tweet.id);
             // Skip processing if the tweet is from the bot itself
             return;
         }
@@ -277,7 +212,7 @@ export class TwitterInteractionClient extends ClientBase {
         ${tweet.text}`)
             .join('\n\n');
         
-        console.log("formattedConversation: ", formattedConversation);
+        // console.log("REDACT: formattedConversation: ", formattedConversation);
         
 
         const formattedHomeTimeline =
@@ -450,12 +385,12 @@ export class TwitterInteractionClient extends ClientBase {
             });
 
             if (!currentTweet) {
-                console.log("No current tweet found for thread building");
+                console.log("No current tweet found for thread");
                 return;
             }
 
             if (depth >= maxReplies) {
-                console.log("Reached maximum reply depth", depth);
+                console.log("Reached all replies", depth);
                 return;
             }
 
@@ -548,7 +483,7 @@ export class TwitterInteractionClient extends ClientBase {
         // Need to bind this context for the inner function
         await processThread.bind(this)(tweet, 0);
         
-        console.log("Final thread built:", {
+        console.log("Final thread:", {
             totalTweets: thread.length,
             tweetIds: thread.map(t => ({
                 id: t.id,

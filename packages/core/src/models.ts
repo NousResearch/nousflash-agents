@@ -107,26 +107,6 @@ const models: Models = {
             [ModelClass.IMAGE]: "black-forest-labs/FLUX.1-schnell",
         },
     },
-    [ModelProviderName.LLAMALOCAL]: {
-        settings: {
-            stop: ["<|eot_id|>", "<|eom_id|>"],
-            maxInputTokens: 32768,
-            maxOutputTokens: 8192,
-            repetition_penalty: 0.0,
-            temperature: 0.3,
-        },
-        model: {
-            [ModelClass.SMALL]:
-                "NousResearch/Hermes-3-Llama-3.1-8B-GGUF/resolve/main/Hermes-3-Llama-3.1-8B.Q8_0.gguf?download=true",
-            [ModelClass.MEDIUM]:
-                "NousResearch/Hermes-3-Llama-3.1-8B-GGUF/resolve/main/Hermes-3-Llama-3.1-8B.Q8_0.gguf?download=true", // TODO: ?download=true
-            [ModelClass.LARGE]:
-                "NousResearch/Hermes-3-Llama-3.1-8B-GGUF/resolve/main/Hermes-3-Llama-3.1-8B.Q8_0.gguf?download=true",
-            // "RichardErkhov/NousResearch_-_Meta-Llama-3.1-70B-gguf", // TODO:
-            [ModelClass.EMBEDDING]:
-                "togethercomputer/m2-bert-80M-32k-retrieval",
-        },
-    },
     [ModelProviderName.GOOGLE]: {
         settings: {
             stop: [],
@@ -188,33 +168,6 @@ const models: Models = {
                 settings.OPENROUTER_MODEL ||
                 "nousresearch/hermes-3-llama-3.1-405b",
             [ModelClass.EMBEDDING]: "text-embedding-3-small",
-        },
-    },
-    [ModelProviderName.OLLAMA]: {
-        settings: {
-            stop: [],
-            maxInputTokens: 128000,
-            maxOutputTokens: 8192,
-            frequency_penalty: 0.0,
-            presence_penalty: 0.0,
-            temperature: 0.3,
-        },
-        endpoint: settings.OLLAMA_SERVER_URL || "http://localhost:11434",
-        model: {
-            [ModelClass.SMALL]:
-                settings.SMALL_OLLAMA_MODEL ||
-                settings.OLLAMA_MODEL ||
-                "llama3.2",
-            [ModelClass.MEDIUM]:
-                settings.MEDIUM_OLLAMA_MODEL ||
-                settings.OLLAMA_MODEL ||
-                "hermes3",
-            [ModelClass.LARGE]:
-                settings.LARGE_OLLAMA_MODEL ||
-                settings.OLLAMA_MODEL ||
-                "hermes3:70b",
-            [ModelClass.EMBEDDING]:
-                settings.OLLAMA_EMBEDDING_MODEL || "mxbai-embed-large",
         },
     },
     [ModelProviderName.HYPERBOLIC]: {

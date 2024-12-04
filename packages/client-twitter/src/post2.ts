@@ -171,7 +171,7 @@ export class TwitterPostClient extends ClientBase {
             });
 
             const slice = newTweetContent.replaceAll(/\\n/g, "\n").trim();
-            console.log(`New Tweet Post Content with model: ${slice}`);
+            // console.log(`New Tweet Post Content with model: ${slice}`);
 
             const contentLength = 240;
 

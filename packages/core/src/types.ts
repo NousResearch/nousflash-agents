@@ -108,12 +108,10 @@ export type Models = {
     [ModelProviderName.GROK]: Model;
     [ModelProviderName.GROQ]: Model;
     [ModelProviderName.LLAMACLOUD]: Model;
-    [ModelProviderName.LLAMALOCAL]: Model;
     [ModelProviderName.GOOGLE]: Model;
     [ModelProviderName.CLAUDE_VERTEX]: Model;
     [ModelProviderName.REDPILL]: Model;
     [ModelProviderName.OPENROUTER]: Model;
-    [ModelProviderName.OLLAMA]: Model;
     [ModelProviderName.HYPERBOLIC]: Model;
 };
 
@@ -123,12 +121,10 @@ export enum ModelProviderName {
     GROK = "grok",
     GROQ = "groq",
     LLAMACLOUD = "llama_cloud",
-    LLAMALOCAL = "llama_local",
     GOOGLE = "google",
     CLAUDE_VERTEX = "claude_vertex",
     REDPILL = "redpill",
     OPENROUTER = "openrouter",
-    OLLAMA = "ollama",
     HYPERBOLIC = "hyperbolic",
 }
 

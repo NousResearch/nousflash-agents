@@ -8,105 +8,10 @@ import { stringToUuid } from "@ai16z/eliza/src/uuid.ts";
 import { ClientBase } from "./base.ts";
 import { settings } from "@ai16z/eliza/src/settings.ts";
 import {
-    postActionResponseFooter,
     parseActionResponseFromText
 } from "@ai16z/eliza/src/parsing.ts";
-import { messageCompletionFooter } from "@ai16z/eliza/src/parsing.ts";
 import sharp from "sharp";
-
-const twitterPostTemplate = `{{timeline}}
-
-{{providers}}
-
-About {{agentName}} (@{{twitterUserName}}):
-{{bio}}
-{{lore}}
-{{postDirections}}
-
-{{characterPostExamples}}
-
-# Task: Generate a post in the voice and style based on the post directions of {{agentName}}, aka @{{twitterUserName}}.
-Write a single sentence post that is {{adjective}} about {{topic}} (without mentioning {{topic}} directly), from the perspective of {{agentName}}. 
-Do not add commentary or ackwowledge this request, just write the post.
-Your response should not contain any questions. Brief, concise statements only. No emojis. Use \\n\\n (double spaces) between statements.`;
-
-// Template constants
-export const twitterActionTemplate = 
-`# INSTRUCTIONS: Analyze the following tweet and determine which actions {{agentName}} (@{{twitterUserName}}) should take. Do not comment. Just respond with the appropriate action tags.
-
-About {{agentName}} (@{{twitterUserName}}):
-{{bio}}
-{{lore}}
-{{postDirections}}
-
-Response Guidelines:
-- {{agentName}} is selective about engagement and doesn't want to be annoying
-- Retweets and quotes are extremely rare, only for exceptionally based content that aligns with {{agentName}}'s character
-- Direct mentions get very high priority for replies and quote tweets
-- Avoid engaging with:
-  * Short or low-effort content
-  * Topics outside {{agentName}}'s interests
-  * Repetitive conversations
-  * Existential dread or void posts
-
-IMPORTANT: If already engaged with this user recently, avoid multiple interactions
-IMPORTANT: Replying is a good way to engage
-IMPORTANT: Quality over quantity - better to ignore than to force engagement
-IMPORTANT: Memes should be exceptionally based and on-brand to {{agentName}}'s personality
-IMPORTANT: Avoid retweeting often. The tweet needs to be incredibly unique and based and shitposty.
-
-Scoring System (1-10):
-- Baseline Score: Start at 5/10
-- Add points for:
- * Direct mention of {{agentName}} (+4)
- * Strong alignment with character's personality (+2) 
- * High effort memetic/shitposty content (+2)
- * Notable people in {{agentName}}'s space (+1)
- * Based take that matches character (+1)
- * Extremely memetic potential (+1)
-- Subtract points for:
- * Low effort/short content (-2)
- * Basic or irrelevant (-2)
- * Already engaged recently (-1)
- * Generic/common takes (-1)
-
-Available Actions and Thresholds:
-[LIKE] - Content resonates with {{agentName}}'s interests (medium threshold, 7/10)
-[RETWEET] - Exceptionally based content that perfectly aligns with character (extremely high threshold, very rare to retweet, 9/10)
-[QUOTE] - Rare opportunity to add significant value (very high threshold, 8/10)
-[REPLY] - highly memetic response opportunity (very high threshold, 8/10)
-[MEME: <meme concept>] - God-tier memetic opportunity (extremely high threshold, 10/10)
-
-Current Tweet:
-{{currentTweet}}
-
-# INSTRUCTIONS: Respond with appropriate action tags based on the above criteria and the current tweet. An action must meet its threshold to be included.` 
-+ postActionResponseFooter;
-
-export const twitterQuoteTweetHandlerTemplate =
-    `
-# Task: Generate a post/reply for the character {{agentName}}.
-About {{agentName}} (@{{twitterUserName}}):
-{{bio}}
-{{lore}}
-{{topics}}
-
-{{characterPostExamples}}
-
-{{postDirections}}
-
-Topics to Ignore / Not Discuss:
-existential dread
-void
-random memecoin tickers
-
-# Task: Generate a post/reply in the voice, style and perspective of {{agentName}} (@{{twitterUserName}}) while using the quoted tweet as additional context:
-Quoted Post:
-{{currentTweet}}
-
-` + messageCompletionFooter;
-
-
+import { twitterPostTemplate, twitterActionTemplate, twitterQuoteTweetHandlerTemplate } from "@ai16z/eliza/src/prompts.ts";
 
 // const twitterPostTemplate = settings.HYPERBOLIC_BASE_PROMPT;
 
@@ -226,7 +131,7 @@ export class TwitterPostClient extends ClientBase {
             });
 
             const slice = newTweetContent.replaceAll(/\\n/g, "\n").trim();
-            console.log(`New Tweet Post Content with model: ${slice}`);
+            // console.log(`New Tweet Post Content with model: ${slice}`);
 
             const contentLength = 240;
 
@@ -583,7 +488,7 @@ export class TwitterPostClient extends ClientBase {
             }
     
             // 2. Download the generated image
-            console.log('Downloading generated image from:', result.output);
+            // console.log('Downloading generated image from:', result.output);
             const imageUrl = result.output.replace(/[<>]/g, ''); // Remove <> if present
             const imageResponse = await fetch(imageUrl);
             const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
@@ -671,7 +576,7 @@ export class TwitterPostClient extends ClientBase {
             });
      
             const slice = newTweetContent.replaceAll(/\\n/g, "\n").trim();
-            console.log(`New Tweet Post Content with model: ${slice}`);
+            // console.log(`New Tweet Post Content with model: ${slice}`);
      
             const contentLength = 240;
      
@@ -747,7 +652,7 @@ export class TwitterPostClient extends ClientBase {
     ) {
         try {
             const body = await response.json();
-            console.log("Body tweet result: ", body);
+            // console.log("Body tweet result: ", body);
             const tweetResult = body.data.create_tweet.tweet_results.result;
             console.log("tweetResult", tweetResult);
             

@@ -45,7 +45,7 @@ export function parseArguments(): {
             })
             .parseSync();
     } catch (error) {
-        console.error("Error parsing arguments:", error);
+        console.error("REDACT: ", "Error parsing arguments:", error);
         return {};
     }
 }

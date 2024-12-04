@@ -27,7 +27,6 @@ export const parseShouldRespondFromText = (
         : text.includes("RESPOND") ? "RESPOND" : text.includes("IGNORE") ? "IGNORE" : text.includes("STOP") ? "STOP" : null;
 };
 
-export const postActionResponseFooter = `Choose any combination of [LIKE], [RETWEET], [QUOTE], [REPLY], and [MEME] that are appropriate. Each action must be on its own line. For MEME include the text/concept after a colon. Your response must only include the chosen actions.`;
 
 
 export const parseActionResponseFromText = (text: string): { actions: ActionResponse } => {

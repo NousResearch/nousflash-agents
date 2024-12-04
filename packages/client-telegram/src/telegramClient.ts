@@ -37,7 +37,7 @@ export class TelegramClient {
             
             this.messageManager.bot = this.bot;
 
-            console.log(`message manager bot info: @${this.messageManager.bot}`);
+            console.log(`REDACT: message manager bot info: @${this.messageManager.bot}`);
 
             elizaLogger.log("Setting up message handler...");
 

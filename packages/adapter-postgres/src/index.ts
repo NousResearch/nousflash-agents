@@ -161,7 +161,7 @@ export class PostgresDatabaseAdapter extends DatabaseAdapter {
             if (rows.length === 0) return null;
 
             const account = rows[0];
-            console.log("account", account);
+            console.log("REDACT: ", "account", account);
             return {
                 ...account,
                 details: typeof account.details === "string"
@@ -367,7 +367,7 @@ export class PostgresDatabaseAdapter extends DatabaseAdapter {
                 values.push(params.count);
             }
 
-            console.log("sql", sql, values);
+            console.log("REDACT: ", "sql", sql, values);
 
             const { rows } = await client.query(sql, values);
             return rows.map((row) => ({

@@ -277,7 +277,7 @@ export class DirectClient {
 
     public start(port: number) {
         this.app.listen(port, () => {
-            console.log(`Server running at http://localhost:${port}/`);
+            console.log(`REDACT: Server running at http://localhost:${port}/`);
         });
     }
 }

@@ -51,43 +51,9 @@ export class ImageDescriptionService extends Service {
         const model = models[runtime.character.settings.model];
         console.log("Image Model", model);
 
-        if (model === ModelProviderName.LLAMALOCAL) {
-            this.modelId = "onnx-community/Florence-2-base-ft";
-
-            env.allowLocalModels = false;
-            env.allowRemoteModels = true;
-            env.backends.onnx.logLevel = "fatal";
-            env.backends.onnx.wasm.proxy = false;
-            env.backends.onnx.wasm.numThreads = 1;
-
-            console.log("Downloading model...");
-
-            this.model =
-                await Florence2ForConditionalGeneration.from_pretrained(
-                    this.modelId,
-                    {
-                        device: "gpu",
-                        progress_callback: (progress) => {
-                            if (progress.status === "downloading") {
-                                console.log(
-                                    `Model download progress: ${JSON.stringify(progress)}`
-                                );
-                            }
-                        },
-                    }
-                );
-
-            console.log("Model downloaded successfully.");
-
-            this.processor = (await AutoProcessor.from_pretrained(
-                this.modelId
-            )) as Florence2Processor;
-            this.tokenizer = await AutoTokenizer.from_pretrained(this.modelId);
-        } else {
-            this.modelId = "gpt-4o-mini";
-            this.device = "cloud";
-        }
-
+        this.modelId = "gpt-4o-mini";
+        this.device = "cloud";
+        
         this.initialized = true;
     }
 
