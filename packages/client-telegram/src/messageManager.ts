@@ -23,7 +23,6 @@ import {
     messageCompletionFooter,
     shouldRespondFooter,
 } from "@ai16z/eliza/src/parsing.ts";
-import ImageDescriptionService from "@ai16z/plugin-node/src/services/image.ts";
 
 const MAX_MESSAGE_LENGTH = 4096; // Telegram's max message length
 
@@ -123,16 +122,10 @@ Note that {{agentName}} does not like repetitive conversations and will change t
 export class MessageManager {
     public bot: Telegraf<Context>;
     private runtime: IAgentRuntime;
-    private imageService: ImageDescriptionService;
 
     constructor(bot: Telegraf<Context>, runtime: IAgentRuntime) {
         this.bot = bot;
         this.runtime = runtime;
-        this.imageService = ImageDescriptionService.getInstance();
-        this.imageService.initialize("cloud", runtime)
-        .catch(error => {
-        console.error('Failed to initialize image service:', error);
-        });
     }
 
     // Process image messages and generate descriptions
@@ -168,10 +161,7 @@ export class MessageManager {
             }
 
             if (imageUrl) {
-                const { title, description } = await this.imageService
-                    .describeImage(imageUrl);
-                const fullDescription = `[Image: ${title}\n${description}]`;
-                return { description: fullDescription };
+              console.log("REDACT: imageUrl", imageUrl);
             }
         } catch (error) {
             console.error("❌ Error processing image:", error);
