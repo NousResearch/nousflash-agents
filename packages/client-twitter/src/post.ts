@@ -1,7 +1,7 @@
 import { Tweet } from "goat-x";
 import fs from "fs";
 import { composeContext } from "@ai16z/eliza/src/context.ts";
-import { generateText, generateFormatCompletion, generateTweetActions } from "@ai16z/eliza/src/generation.ts";
+import { generateText, generateFormatCompletion, generateTweetActions, analyzeImageWithURL } from "@ai16z/eliza/src/generation.ts";
 import { embeddingZeroVector } from "@ai16z/eliza/src/memory.ts";
 import { IAgentRuntime, ModelClass } from "@ai16z/eliza/src/types.ts";
 import { stringToUuid } from "@ai16z/eliza/src/uuid.ts";
@@ -14,6 +14,17 @@ import sharp from "sharp";
 import { twitterPostTemplate, twitterActionTemplate, twitterQuoteTweetHandlerTemplate } from "@ai16z/eliza/src/prompts.ts";
 
 // const twitterPostTemplate = settings.HYPERBOLIC_BASE_PROMPT;
+
+
+export const imageAnalysisTemplate = 
+`
+You see a post on Twitter with this image along with the following text/caption:
+{{caption}}
+
+Analyze the image and tell me what it is about and how it might be related to the caption.
+Be concise but detailed.
+`
+
 
 export class TwitterPostClient extends ClientBase {
     onReady() {
@@ -264,9 +275,28 @@ export class TwitterPostClient extends ClientBase {
                         console.log(`Incoming Tweet ${tweet.id} saved to memory`);
                     }
 
+                    let mediaURL;
+                    let imageAnalysisFilledTemplate;
+                    let imageAnalysis = "";
+                    
+                    if(tweet.photos[0]?.media_url_https){
+                        try {
+                            console.log(`Tweet photos: ${tweet.photos[0]?.media_url_https}`);
+                            console.log("beginning image analysis in posts")
+                    
+                            mediaURL = tweet.photos[0]?.media_url_https;
+                            imageAnalysisFilledTemplate = imageAnalysisTemplate.replace('{{caption}}', tweet.text);
+                            imageAnalysis = await analyzeImageWithURL(mediaURL, imageAnalysisFilledTemplate);
+
+                            console.log("Results of tweet image analysis:", imageAnalysis);
+                        } catch (error) {
+                            console.error("Error analyzing image:", error);
+                            imageAnalysis = "Failed to analyze image";
+                        }
+                    }
 
                     const formatTweet = (tweet: any): string => {
-                        return `ID: ${tweet.id}\nFrom: ${tweet.name} (@${tweet.username})${tweet.inReplyToStatusId ? ` In reply to: ${tweet.inReplyToStatusId}` : ""}\nText: ${tweet.text}\n---\n`;
+                        return `ID: ${tweet.id}\nFrom: ${tweet.name} (@${tweet.username})${tweet.inReplyToStatusId ? ` In reply to: ${tweet.inReplyToStatusId}` : ""}\nText: ${tweet.text}\nDescription of Image In Tweet: ${imageAnalysis && imageAnalysis.length > 0 ? imageAnalysis : "No image in tweet!"}\n---\n`;
                     };
 
                     const formattedTweet = formatTweet(tweet);

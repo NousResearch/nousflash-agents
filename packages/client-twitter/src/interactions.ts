@@ -5,7 +5,8 @@ import { embeddingZeroVector } from "@ai16z/eliza/src/memory.ts";
 import {
     generateMessageResponse,
     generateShouldRespond,
-    generateFormatCompletion
+    generateFormatCompletion,
+    analyzeImageWithURL
 } from "@ai16z/eliza/src/generation.ts";
 
 import {
@@ -34,6 +35,15 @@ import { twitterMessageHandlerTemplate, twitterShouldRespondTemplate } from "@ai
 // GENERATED POST:
 
 // `
+
+export const imageAnalysisTemplate = 
+`
+You see a post on Twitter with this image along with the following text/caption:
+{{caption}}
+
+Analyze the image and tell me what it is about and how it might be related to the caption.
+Be concise but detailed.
+`
 
 export class TwitterInteractionClient extends ClientBase {
     onReady() {
@@ -180,12 +190,34 @@ export class TwitterInteractionClient extends ClientBase {
             return { text: "", action: "IGNORE" };
         }
         console.log("handling tweet", tweet.id);
+        
+        let mediaURL;
+        let imageAnalysisFilledTemplate;
+        let imageAnalysis = "";
+
+        // console.log(`Tweet photos: ${tweet.photos}`)
+        if(tweet.photos[0]){
+            console.log(`Tweet photos: ${tweet}`)
+            console.log("beginning image analysis for reply")
+
+            mediaURL = tweet.photos[0]?.url;
+            imageAnalysisFilledTemplate = imageAnalysisTemplate.replace('{{caption}}', tweet.text);
+            imageAnalysis = await analyzeImageWithURL(mediaURL, imageAnalysisFilledTemplate);
+
+            console.log("Results of tweet image analysis for reply:", imageAnalysis);
+        }
+
+
         const formatTweet = (tweet: Tweet) => {
-            return `  ID: ${tweet.id}
-  From: ${tweet.name} (@${tweet.username})
-  Text: ${tweet.text}`;
-        };
+            return `ID: ${tweet.id}
+           From: ${tweet.name} (@${tweet.username})
+           Text: ${tweet.text}
+           
+           Image Analysis: ${imageAnalysis && imageAnalysis.length > 0 ? imageAnalysis : "No image in tweet!"}\n`;
+           };
+
         const currentPost = formatTweet(tweet);
+
 
         let homeTimeline = [];
         // read the file if it exists
