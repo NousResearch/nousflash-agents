@@ -393,7 +393,7 @@ export async function generateTweetActions({
             //     context
             // );
             console.debug("Attempting to generate text with context for tweet actions")
-            
+
             const response = await generateText({
                 runtime,
                 context,
@@ -1042,4 +1042,68 @@ interface HyperbolicResponse {
 
     // If both models fail after all attempts, throw error
     throw new Error("Failed to format tweet with both 405B and 70B models after all retry attempts");
+}
+
+
+
+export async function analyzeImageWithURL(
+    imageUrl: string,
+    prompt?: string,
+    maxAttempts: number = 3
+): Promise<string> {
+    if (!settings.HYPERBOLIC_API_KEY) {
+        throw new Error('HYPERBOLIC_API_KEY environment variable is not set');
+    }
+
+    if(!prompt) {
+        prompt = "What is this image?";
+    }
+
+    for (let tries = 0; tries < maxAttempts; tries++) {
+        try {
+            const response = await fetch('https://api.hyperbolic.xyz/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${settings.HYPERBOLIC_API_KEY}`
+                },
+                body: JSON.stringify({
+                    model: 'Qwen/Qwen2-VL-72B-Instruct',
+                    messages: [{
+                        role: 'user',
+                        content: [
+                            { type: "text", text: prompt },
+                            { 
+                                type: "image_url", 
+                                image_url: { 
+                                    url: imageUrl 
+                                }
+                            }
+                        ]
+                    }],
+                    max_tokens: 2048,
+                    temperature: 1,
+                    top_p: 0.95,
+                    stream: false
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const content = data.choices[0]?.message?.content;
+                console.log(`Hyperbolic image API response: ${content}`);
+                return content;
+
+            }
+
+            console.error(`API response not ok on attempt ${tries + 1}: ${JSON.stringify(await response.json(), null, 2)}`);
+
+        } catch (error) {
+            console.error(`Error on attempt ${tries + 1}:`, error);
+            if (tries === maxAttempts - 1) throw error;
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+    }
+
+    throw new Error('Max retry attempts reached');
 }
