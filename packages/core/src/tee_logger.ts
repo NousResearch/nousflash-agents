@@ -82,13 +82,13 @@ async function createSanitizedLog(filePath: string): Promise<string> {
                 .digest('hex');
             
             // Find the position after "REDACTED:"
-            const redactedPos = line.indexOf('REDACTED:') + 9;
+            const redactedPos = line.indexOf('REDACT:') + 7;
             // Keep the prefix (timestamp, level, and "REDACTED:")
             const prefix = line.substring(0, redactedPos);
             
             // Calculate padding to match original line length
             const paddingLength = Math.max(0, line.length - (prefix.length + 64)); // 64 is length of sha256 hex
-            const padding = '\u2800'.repeat(paddingLength); // Unicode Braille Pattern Blank
+            const padding = '\u25A0'.repeat(paddingLength); // Unicode Braille Pattern Blank
 
             return `${prefix} ${hash}${padding}`;
         }
