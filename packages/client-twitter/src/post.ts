@@ -64,7 +64,8 @@ export class TwitterPostClient extends ClientBase {
             ); // Random interval between 30-60 minutes
         };
 
-        tweetWallet();
+        // Uncomment to announce the new wallet
+	// tweetWallet();
     
         // Start both loops
         generateNewTweetLoop();
