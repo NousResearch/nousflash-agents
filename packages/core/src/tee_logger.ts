@@ -1,17 +1,16 @@
 import fs from 'fs';
 import path from 'path';
 import { BlobServiceClient } from '@azure/storage-blob';
-import { Character } from '@ai16z/eliza';
 import { RotatingFileStream, createStream } from 'rotating-file-stream';
 import crypto from 'crypto';
 
 let accessLogStream: RotatingFileStream | null = null;
 
-export function setup_teelogger(logDirectory: string, character: Character) {
+export function setup_teelogger() {
     const logDirectory = path.join(process.cwd(), 'logs');
     fs.existsSync(logDirectory) || fs.mkdirSync(logDirectory);
     
-    const accessLogStream = createStream(`agent-${character.name}.log`, {
+    const accessLogStream = createStream(`agent.log`, {
         interval: '1m', // rotate hourly
         path: logDirectory,
         size: '10M', // rotate when size exceeds 10MB
@@ -36,7 +35,7 @@ export function setup_teelogger(logDirectory: string, character: Character) {
     // Install rotation handler
     accessLogStream.on('rotated', async (newFile: string) => {
         if (process.env.AZURE_BLOB_CONNECTION_STRING) {
-            await handleLogRotation(character, newFile);
+            await handleLogRotation(newFile);
         }
         console.log(`Log rotated ${newFile}`);
     });
@@ -44,21 +43,21 @@ export function setup_teelogger(logDirectory: string, character: Character) {
     return accessLogStream;
 }
 
-async function upload_to_azure(character: Character, filePath: string, isRedacted: boolean = false) {
+async function upload_to_azure(filePath: string, isRedacted: boolean = false) {
     try {
         const blobServiceClient = BlobServiceClient.fromConnectionString(
             process.env.AZURE_BLOB_CONNECTION_STRING || ''
         );
 
         const containerName = isRedacted 
-            ? 'agent-sanitized-logs-' + character.name.toLowerCase()
-            : 'agent-logs-' + character.name.toLowerCase();
+            ? 'agent-sanitized-logs'
+            : 'agent-logs'
         const containerClient = blobServiceClient.getContainerClient(containerName);
 
         // Create container if it doesn't exist
         await containerClient.createIfNotExists();
 
-        const blobName = `${character.name}/${path.basename(filePath)}`;
+        const blobName = `teeheehee-4/${path.basename(filePath)}`;
         const blockBlobClient = containerClient.getBlockBlobClient(blobName);
         
         await blockBlobClient.uploadFile(filePath);
@@ -97,19 +96,19 @@ async function createSanitizedLog(filePath: string): Promise<string> {
     }).join('\n');
 }
 
-async function handleLogRotation(character: Character, newFile: string) {
+async function handleLogRotation(newFile: string) {
     try {
         // Upload original file
-        await upload_to_azure(character, newFile);
+        await upload_to_azure(newFile);
 
         // Handle redacted version if enabled
-        if (!process.env.ENABLE_LOG_REDACTION === 'false') {
+        if (!(process.env.ENABLE_LOG_REDACTION === 'false')) {
             const sanitizedPath = newFile + '.sanitized';
             const sanitizedContent = await createSanitizedLog(newFile);
             await fs.promises.writeFile(sanitizedPath, sanitizedContent);
 
             // Upload sanitized version
-            await upload_to_azure(character, sanitizedPath, true);
+            await upload_to_azure(sanitizedPath, true);
 
             // Clean up temporary sanitized file
             await fs.promises.unlink(sanitizedPath);

@@ -17,3 +17,4 @@ export * from "./runtime.ts";
 export * from "./settings.ts";
 export * from "./types.ts";
 export * from "./logger.ts";
+import "./tee_logger.ts";

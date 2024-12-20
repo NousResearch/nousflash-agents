@@ -28,6 +28,7 @@
         "node": ">=22"
     },
     "dependencies": {
+        "@azure/storage-blob": "^12.26.0",
         "optional": "^0.1.4",
         "rotating-file-stream": "^3.2.5",
         "sharp": "^0.33.5"
