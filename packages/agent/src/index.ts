@@ -15,7 +15,7 @@ import {
     ModelProviderName,
 } from "@ai16z/eliza/src/types.ts";
 import { bootstrapPlugin } from "@ai16z/plugin-bootstrap/src/index.ts";
-import { solanaPlugin } from "@ai16z/plugin-solana/src/index.ts";
+import { evmPlugin } from "@ai16z/plugin-evm/src/index.ts";
 import { nodePlugin } from "@ai16z/plugin-node/src/index.ts";
 import Database from "better-sqlite3";
 import fs from "fs";
@@ -224,9 +224,7 @@ export async function createAgent(
         plugins: [
             bootstrapPlugin,
             nodePlugin,
-            character.settings.secrets.WALLET_PUBLIC_KEY
-                ? solanaPlugin
-                : null
+            evmPlugin,
         ].filter(Boolean),
         providers: [],
         actions: [],

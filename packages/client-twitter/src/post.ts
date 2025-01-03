@@ -65,11 +65,11 @@ export class TwitterPostClient extends ClientBase {
         };
 
         // Uncomment to announce the new wallet
-	// tweetWallet();
+        // tweetWallet();
     
         // Start both loops
-        generateNewTweetLoop();
-        generateNewTimelineTweetLoop();
+        // generateNewTweetLoop();
+        // generateNewTimelineTweetLoop();
     }
 
     constructor(runtime: IAgentRuntime) {
