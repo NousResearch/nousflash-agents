@@ -163,8 +163,6 @@ export const redeemNFTAction = {
         const walletProvider = initWalletProvider(runtime);
         const action = new RedeemNFTAction(walletProvider);
 
-        const address = walletProvider.getWalletClient("base").account.address;
-
         const paramOptions = await buildRedeemDetails(state, runtime);
 
         try {
