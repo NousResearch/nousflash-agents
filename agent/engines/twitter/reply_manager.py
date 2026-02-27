@@ -3,6 +3,7 @@ import random
 import re
 import time
 from typing import List, Tuple
+from unicodedata import normalize
 
 from engines.memory.significance_scorer import SignificanceScorer
 from engines.twitter.post_maker import PostMaker
@@ -89,15 +90,12 @@ class ReplyManager:
 
     def is_spam(self, content: str) -> bool:
         """Check if content appears to be spam."""
-        import re
-        from unicodedata import normalize
-
         # Normalize more aggressively: remove all whitespace, symbols, zero-width chars
-        clean = re.sub(r'[\s\.\-_\|\\/\(\)\[\]\u200b-\u200f\u2060\ufeff]+', '', 
+        clean = re.sub(r'[\s\.\-_\|\\/\(\)\[\]\u200b-\u200f\u2060\ufeff]+', '',
                        normalize('NFKC', content.lower()))
 
         patterns = [
-            r'[\$\€\¢\£\¥]|(?:usd[t]?|usdc|busd)',  
+            r'[\$\€\¢\£\¥]|(?:usd[t]?|usdc|busd)',
             r'(?:ca|с[aа]|market.?cap)[:\|/]?(?:\d|soon)',
             r't[i1І]ck[e3Е]r|symb[o0]l|(?:trading|list).?pairs?',
             r'p[uüūи][mм]p|рuмр|ⓟⓤⓜⓟ|accumulate',
@@ -116,3 +114,4 @@ class ReplyManager:
             r'(?:early|earlybird|early.?access)',
             r'(?:t\.me|discord\.gg|dex\.tools)',
         ]
+        return any(re.search(pattern, clean) for pattern in patterns)
