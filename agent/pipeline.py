@@ -122,7 +122,7 @@ class PostingPipeline:
 
         # Post if significant enough
         if significance_score >= self.config.min_posting_significance_score:
-            tweet_id = self.post_maker._post_content(new_post_content)
+            tweet_id = self.post_sender._post_content(self.config.auth, self.config.account, new_post_content)
             if tweet_id:
                 new_post = Post(
                     content=new_post_content,

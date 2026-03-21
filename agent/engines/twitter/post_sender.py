@@ -81,17 +81,18 @@ class PostSender:
 
         except Exception as e:
             print(f"Error verifying tweet post: {str(e)}")
+            return False
 
 
 
-    def _post_content(self, content: str) -> Optional[str]:
+    def _post_content(self, auth, account: Account, content: str) -> Optional[str]:
         """Attempt to post content using available methods."""
         # Try API method first
-        tweet_id = self.send_post_API(self.config.auth, content)
+        tweet_id = self.send_post_API(auth, content)
         if tweet_id:
             return tweet_id
         # Fallback to account method
-        response = self.send_post(self.config.account, content)
+        response = self.send_post(account, content)
         return (response.get('data', {})
                 .get('create_tweet', {})
                 .get('tweet_results', {})
