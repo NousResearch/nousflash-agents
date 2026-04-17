@@ -13,7 +13,7 @@ hehe 2 just cuz
 
 ### basics:
 
-DB folder has scripts to create and seed the database with some fake data. dokcer should automatically run all of this for you.
+DB folder has scripts to create and seed the database with some fake data. docker should automatically run all of this for you.
 
 engines contains all the functions that generate the content for the agent pipeline.
 
