@@ -116,3 +116,5 @@ class ReplyManager:
             r'(?:early|earlybird|early.?access)',
             r'(?:t\.me|discord\.gg|dex\.tools)',
         ]
+
+        return any(re.search(pattern, clean) for pattern in patterns)
